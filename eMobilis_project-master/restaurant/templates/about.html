@@ -1,0 +1,290 @@
+{% extends 'common.html' %}
+
+{% load static %}
+
+{% block body %}
+
+    <section class="hero-wrap hero-wrap-2" style="background-image: url('{% static 'images/bg_4.jpg' %}');" data-stellar-background-ratio="0.5">
+      <div class="overlay"></div>
+      <div class="container">
+        <div class="row no-gutters slider-text align-items-center justify-content-center">
+          <div class="col-md-9 ftco-animate text-center" style="background: #ffc4c4">
+            <h1 class="mb-2 bread">About</h1>
+            <p class="breadcrumbs"><span class="mr-2"><a href="index.html">Home <i class="ion-ios-arrow-forward"></i></a></span> <span>About <i class="ion-ios-arrow-forward"></i></span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+{% for about in about %}
+		<section class="ftco-section ftco-wrap-about ftco-no-pb ftco-no-pt" style="background: #ffc4c4">
+			<div class="container-fluid">
+				<div class="row no-gutters">
+					<div class="col-sm-5 img img-2 d-flex align-items-center justify-content-center justify-content-md-end" style="background-image: url({% static 'images/about.jpg' %}); position: relative">
+                        <iframe width="853" height="600" src="https://www.youtube.com/embed/lTfEm-V75Uo" title="Twisted State Fair Sandwiches!! New York State Fair Goes Too Far!!" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+{#						<a href="{% static 'videos/flavor fusion.mp4' %}" class="icon-video popup-vimeo d-flex justify-content-center align-items-center">#}
+{#  						<span class="ion-ios-play"></span>#}
+{#  					</a>#}
+					</div>
+					<div class="col-sm-7 wrap-about py-5 ftco-animate">
+	          <div class="heading-section mt-5 mb-4">
+	          	<div class="pl-lg-5 ml-md-5">
+		          	<span class="subheading">{{ about.heading }}</span>
+		            <h2 class="mb-4">{{ about.welcome }}</h2>
+	            </div>
+	          </div>
+	          <div class="pl-lg-5 ml-md-5">
+							<p>{{ about.description }}</p>
+							<h3 class="mt-5">{{ about.special }}</h3>
+							<div class="thumb my-4 d-flex">
+	            	<a href="#" class="thumb-menu pr-md-4 text-center">
+	            		<div class="img" style="background-image: url(  'media/{{ about.img1 }}' );"></div>
+	            		<h4>{{ about.text1 }}</h4>
+	            	</a>
+	            	<a href="#" class="thumb-menu pr-md-4 text-center">
+	            		<div class="img" style="background-image: url(  'media/{{ about.img2 }}' );"></div>
+	            		<h4>{{ about.text2 }}</h4>
+	            	</a>
+	            	<a href="#" class="thumb-menu pr-md-4 text-center">
+	            		<div class="img" style="background-image: url(  'media/{{ about.img3 }}' );"></div>
+	            		<h4>{{ about.text3 }}</h4>
+	            	</a>
+	            </div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+{% endfor %}
+
+{% for happy in happy %}
+
+		<section class="ftco-section ftco-counter img" id="section-counter" style="background-image: url(  'media/{{ happy.image }}' );" data-stellar-background-ratio="0.5">
+    	<div class="container">
+    		<div class="row d-md-flex align-items-center justify-content-center">
+    			<div class="col-lg-10">
+    				<div class="row d-md-flex align-items-center">
+		          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
+		            <div class="block-18">
+		              <div class="text">
+		                <strong class="number" data-number="18">0</strong>
+		                <span>{{ happy.text1 }}</span>
+		              </div>
+		            </div>
+		          </div>
+		          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
+		            <div class="block-18">
+		              <div class="text">
+		                <strong class="number" data-number="20000">0</strong>
+		                <span>{{ happy.text2 }}</span>
+		              </div>
+		            </div>
+		          </div>
+		          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
+		            <div class="block-18">
+		              <div class="text">
+		                <strong class="number" data-number="564">0</strong>
+		                <span>{{ happy.text3 }}</span>
+		              </div>
+		            </div>
+		          </div>
+		          <div class="col-md d-flex justify-content-center counter-wrap ftco-animate">
+		            <div class="block-18">
+		              <div class="text">
+		                <strong class="number" data-number="300">0</strong>
+		                <span>{{ happy.text4 }}</span>
+		              </div>
+		            </div>
+		          </div>
+	          </div>
+          </div>
+        </div>
+    	</div>
+    </section>
+
+{% endfor %}
+
+
+
+
+		<section class="ftco-section"style="background: #ffc4c4" >
+			<div class="container">
+				<div class="row justify-content-center mb-5 pb-2">
+          <div class="col-md-7 text-center heading-section ftco-animate">
+          	<span class="subheading">Chef</span>
+            <h2 class="mb-4">Our Mater Chef</h2>
+          </div>
+        </div>
+
+            <div class="row">
+                    {% for chef in chefs %}
+					<div class="col-md-6 col-lg-3 ftco-animate">
+						<div class="staff">
+							<div class="img" style="background-image: url('media/{{ chef.image }}');"></div>
+							<div class="text px-4 pt-4">
+								<h3>{{ chef.name }}</h3>
+								<span class="position mb-2">{{ chef.role}}</span>
+								<div class="faded">
+									<!-- <p>I am an ambitious workaholic, but apart from that, pretty simple person.</p> -->
+									<ul class="ftco-social d-flex">
+		                <li class="ftco-animate"><a href="{{ chef.twitter }}" target="_blank"><span class="icon-twitter"></span></a></li>
+		                <li class="ftco-animate"><a href="{{ chef.facebook }}" target="_blank"><span class="icon-facebook"></span></a></li>
+		                <li class="ftco-animate"><a href="{{ chef.instagram }}" target="_blank"><span class="icon-instagram"></span></a></li>
+		              </ul>
+	              </div>
+							</div>
+						</div>
+					</div>
+                    {% endfor %}
+				</div>
+			</div>
+		</section>
+
+
+{% for testimony in testimony %}
+        <section class="ftco-section testimony-section" style="background-image: url( 'media/{{ testimony.background}}' );" data-stellar-background-ratio="0.5">
+      <div class="container">
+        <div class="row justify-content-center mb-5 pb-2">
+          <div class="col-md-7 text-center heading-section heading-section-white ftco-animate">
+          	<span class="subheading">Testimony</span>
+            <h2 class="mb-4">Happy Customer</h2>
+          </div>
+        </div>
+
+        <div class="row ftco-animate justify-content-center">
+          <div class="col-md-7">
+            <div class="carousel-testimony owl-carousel ftco-owl">
+              <div class="item">
+                <div class="testimony-wrap text-center py-4 pb-5">
+                  <div class="user-img mb-4" style="background-image: url( 'media/{{ testimony.image1 }}' )">
+                    <span class="quote d-flex align-items-center justify-content-center">
+                      <i class="icon-quote-left"></i>
+                    </span>
+                  </div>
+                  <div class="text p-3">
+                    <p class="mb-4">{{ testimony.text1 }}</p>
+                    <p class="name">{{ testimony.name1 }}r</p>
+                    <span class="position">{{ testimony.position1 }}</span>
+                  </div>
+                </div>
+              </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    <div class="row ftco-animate justify-content-center">
+          <div class="col-md-7">
+            <div class="carousel-testimony owl-carousel ftco-owl">
+              <div class="item">
+                <div class="testimony-wrap text-center py-4 pb-5">
+                  <div class="user-img mb-4" style="background-image: url( 'media/{{ testimony.image2 }}' )">
+                    <span class="quote d-flex align-items-center justify-content-center">
+                      <i class="icon-quote-left"></i>
+                    </span>
+                  </div>
+                  <div class="text p-3">
+                    <p class="mb-4">{{ testimony.text2 }}</p>
+                    <p class="name">{{ testimony.name2 }}r</p>
+                    <span class="position">{{ testimony.position2 }}</span>
+                  </div>
+                </div>
+              </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+     <div class="row ftco-animate justify-content-center">
+          <div class="col-md-7">
+            <div class="carousel-testimony owl-carousel ftco-owl">
+              <div class="item">
+                <div class="testimony-wrap text-center py-4 pb-5">
+                  <div class="user-img mb-4" style="background-image: url( 'media/{{ testimony.image3 }}' )">
+                    <span class="quote d-flex align-items-center justify-content-center">
+                      <i class="icon-quote-left"></i>
+                    </span>
+                  </div>
+                  <div class="text p-3">
+                    <p class="mb-4">{{ testimony.text3 }}</p>
+                    <p class="name">{{ testimony.name3 }}r</p>
+                    <span class="position">{{ testimony.position3 }}</span>
+                  </div>
+                </div>
+              </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    <div class="row ftco-animate justify-content-center">
+          <div class="col-md-7">
+            <div class="carousel-testimony owl-carousel ftco-owl">
+              <div class="item">
+                <div class="testimony-wrap text-center py-4 pb-5">
+                  <div class="user-img mb-4" style="background-image: url( 'media/{{ testimony.image4 }}' )">
+                    <span class="quote d-flex align-items-center justify-content-center">
+                      <i class="icon-quote-left"></i>
+                    </span>
+                  </div>
+                  <div class="text p-3">
+                    <p class="mb-4">{{ testimony.text4 }}</p>
+                    <p class="name">{{ testimony.name4 }}r</p>
+                    <span class="position">{{ testimony.position4 }}</span>
+                  </div>
+                </div>
+              </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    <div class="row ftco-animate justify-content-center">
+          <div class="col-md-7">
+            <div class="carousel-testimony owl-carousel ftco-owl">
+              <div class="item">
+                <div class="testimony-wrap text-center py-4 pb-5">
+                  <div class="user-img mb-4" style="background-image: url( 'media/{{ testimony.image5 }}' )">
+                    <span class="quote d-flex align-items-center justify-content-center">
+                      <i class="icon-quote-left"></i>
+                    </span>
+                  </div>
+                  <div class="text p-3">
+                    <p class="mb-4">{{ testimony.text5 }}</p>
+                    <p class="name">{{ testimony.name5 }}r</p>
+                    <span class="position">{{ testimony.position5 }}</span>
+                  </div>
+                </div>
+              </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+{% endfor %}
+
+
+{% for aboutend in aboutend %}
+		<section class="ftco-section" style="background: #ffc4c4">
+			<div class="container">
+				<div class="row justify-content-center mb-5 pb-2">
+          <div class="col-md-7 text-center heading-section ftco-animate">
+          	<span class="subheading">{{ aboutend.name }}</span>
+            <h2 class="mb-4">{{ aboutend.heading }}</h2>
+            <p>{{ aboutend.text }} </p>
+            <p><a href="reservation.html" class="btn btn-primary px-4 py-3">{{ aboutend.btn }}</a></p>
+          </div>
+        </div>
+			</div>
+		</section>
+{% endfor %}
+
+
+{% endblock %}
+
+
+

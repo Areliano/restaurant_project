@@ -143,20 +143,41 @@ class Ourmenu(models.Model):
         ('breakfast', 'Breakfast'),
         ('lunch', 'Lunch'),
         ('dinner', 'Dinner'),
-        ('Dessert', 'Dessert'),
-        ('Winecard', 'Winecard'),
-        ('Drinks', 'Drinks')
+        ('dessert', 'Dessert'),
+        ('winecard', 'Winecard'),
+        ('drinks', 'Drinks')
     ]
 
     foodname = models.CharField(max_length=50, blank=False, null=False)
-    category = models.CharField(max_length=50, choices=category_options, default='Dinner')
+    category = models.CharField(max_length=50, choices=category_options, default='dinner')
     foodimage = models.ImageField(upload_to='ourmenu')
     description = models.CharField(max_length=200, blank=False, null=False)
     price = models.PositiveIntegerField()
-
+    stock = models.PositiveIntegerField(default=10)  # Track available stock
 
     def __str__(self):
-        return self.foodname
+        return f"{self.foodname} - Stock: {self.stock}"
+
+class Order(models.Model):
+    menu_item = models.ForeignKey(Ourmenu, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    customer_name = models.CharField(max_length=100)
+    customer_phone = models.CharField(max_length=10, validators=[
+        RegexValidator(r'^\d{10}$', message="Phone number has to be 10 digits.")
+    ])
+    order_date = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.menu_item.stock >= self.quantity:
+            self.menu_item.stock -= self.quantity  # Reduce stock
+            self.menu_item.save()  # Save the updated stock
+            super().save(*args, **kwargs)  # Save the order
+        else:
+            raise ValueError("Order cannot be placed. Item is out of stock.")
+
+    def __str__(self):
+        return f"Order for {self.menu_item.foodname} - {self.quantity} items"
+
 
 class Happy(models.Model):
     text1 = models.CharField(max_length=500, default='text1')

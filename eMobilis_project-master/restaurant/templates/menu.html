@@ -1,73 +1,140 @@
 {% extends 'common.html' %}
-
 {% load static %}
 
 {% block body %}
 
-
-    <section class="hero-wrap hero-wrap-2" style="background-image: url('{% static 'images/bg_4.jpg' %}');" data-stellar-background-ratio="0.5">
-      <div class="overlay"></div>
-      <div class="container">
+<section class="hero-wrap hero-wrap-2" style="background-image: url('{% static 'images/bg_4.jpg' %}');" data-stellar-background-ratio="0.5">
+    <div class="overlay"></div>
+    <div class="container">
         <div class="row no-gutters slider-text align-items-center justify-content-center">
-          <div class="col-md-9 ftco-animate text-center" style="background: #ffc4c4" >
-            <h1 class="mb-2 bread">Specialties</h1>
-            <p class="breadcrumbs"><span class="mr-2"><a href="index.html">Home <i class="ion-ios-arrow-forward"></i></a></span> <span>Menu <i class="ion-ios-arrow-forward"></i></span></p>
-          </div>
+            <div class="col-md-9 ftco-animate text-center" style="background: #ffc4c4">
+                <h1 class="mb-2 bread">Specialties</h1>
+                <p class="breadcrumbs">
+                    <span class="mr-2"><a href="index.html">Home <i class="ion-ios-arrow-forward"></i></a></span>
+                    <span>Menu <i class="ion-ios-arrow-forward"></i></span>
+                </p>
+            </div>
         </div>
-      </div>
-    </section>
-
-
+    </div>
+</section>
 
 <section class="ftco-section" style="background: #ffc4c4">
-    	<div class="container">
-    		<div class="row justify-content-center mb-5 pb-2">
-          <div class="col-md-7 text-center heading-section ftco-animate">
-          	<span class="subheading">Specialties</span>
-            <h2 class="mb-4">Our menu</h2>
-          </div>
+    <div class="container">
+        <div class="row justify-content-center mb-5 pb-2">
+            <div class="col-md-7 text-center heading-section ftco-animate">
+                <span class="subheading">Specialties</span>
+                <h2 class="mb-4">Our Menu</h2>
+            </div>
         </div>
-
-
 
         <div class="row">
             {% for menu in menu %}
-        	<div class="col-md-6 col-lg-4 menu-wrap">
-        		<div class="heading-menu text-center ftco-animate">
-        			<h3>{{ menu.category }}</h3>
-        		</div>
-        		<div class="menus d-flex ftco-animate">
-              <div class="menu-img img" style="background-image: url( 'media/{{ menu.foodimage }}');"></div>
-              <div class="text">
-              	<div class="d-flex">
-	                <div class="one-half">
-	                  <h3>{{ menu.foodname }}</h3>
-	                </div>
-	                <div class="one-forth">
-	                  <span class="price">{{ menu.price }}</span>
-	                </div>
-	              </div>
-	              <p><span>{{ menu.description }}</span></p>
-              </div>
+            <div class="col-md-6 col-lg-4 menu-wrap">
+                <div class="heading-menu text-center ftco-animate">
+                    <h3>{{ menu.category }}</h3>
+                </div>
+                <div class="menus d-flex ftco-animate">
+                    <div class="menu-img img" style="background-image: url('media/{{ menu.foodimage }}');"></div>
+                    <div class="text">
+                        <div class="d-flex">
+                            <div class="one-half">
+                                <h3>{{ menu.foodname }}</h3>
+                            </div>
+                            <div class="one-forth">
+                                <span class="price">{{ menu.price }}</span>
+                            </div>
+                        </div>
+                        <p><span>{{ menu.description }}</span></p>
+
+                        {% if menu.stock > 0 %}
+                            {% if menu.stock <= 5 %}
+                                <p style="color: red; font-weight: bold;">⚠️ Low stock: Only {{ menu.stock }} left!</p>
+                            {% endif %}
+                            <button class="btn btn-success order-now-btn" data-id="{{ menu.id }}">Order Now</button>
+                        {% else %}
+                            <button class="btn btn-danger" disabled>Out of Stock</button>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-
-        	</div>
-{% endfor %}
+            {% endfor %}
         </div>
-
-
 
         <div class="row">
-        	<div class="col-md-12 text-center ftco-animate">
-        		<p><a href="#" class="btn btn-black py-3 px-5">View All Menu</a></p>
-        	</div>
+            <div class="col-md-12 text-center ftco-animate">
+                <p><a href="#" class="btn btn-black py-3 px-5">View All Menu</a></p>
+            </div>
         </div>
-    	</div>
+    </div>
+</section>
 
-    </section>
+<!-- Custom JavaScript for Order Popup -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".order-now-btn").forEach(button => {
+        button.addEventListener("click", function() {
+            let menuId = this.getAttribute("data-id");
 
+            let orderForm = `
+                <div class="order-popup">
+                    <h2>Place Your Order</h2>
+                    <form method="POST" action="{% url 'place_order' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="menu_item" value="${menuId}">
+                        <label>Quantity:</label>
+                        <input type="number" name="quantity" min="1" required>
+                        <label>Name:</label>
+                        <input type="text" name="customer_name" pattern="[A-Za-z ]+" required>
+                        <label>Phone:</label>
+                        <input type="tel" name="customer_phone" pattern="[0-9]{10}" required>
+                        <button type="submit" class="btn btn-success">Submit Order</button>
+                        <button type="button" class="btn btn-danger close-popup">Cancel</button>
+                    </form>
+                </div>
+            `;
 
+            let popup = document.createElement("div");
+            popup.innerHTML = orderForm;
+            popup.classList.add("popup-overlay");
+            document.body.appendChild(popup);
+
+            // Close popup
+            popup.querySelector(".close-popup").addEventListener("click", function() {
+                popup.remove();
+            });
+        });
+    });
+});
+</script>
+
+<style>
+/* Popup Order Form Styles */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.order-popup {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 50%;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+.close-popup {
+    margin-top: 10px;
+    cursor: pointer;
+}
+</style>
 
 {% endblock %}
-
-

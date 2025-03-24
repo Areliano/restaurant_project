@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 
-from .models import Restaurant, Customer, Aboutpage, Homepage, Stories, Chefs, Ourmenu, Happy, Testimony, Aboutend, Contact, Footer
+from .models import Restaurant, Customer, Aboutpage, Homepage, Stories, Chefs, Ourmenu, Happy, Testimony, Aboutend, Contact, Footer, Order
 
 from django.utils import timezone
 
 from django.http import HttpResponse
+from django.contrib import messages
 
 
 # from restaurant.models import Homepage
@@ -65,6 +66,44 @@ def menu(request):
     menu = Ourmenu.objects.all()
     footer = Footer.objects.all()
     return render(request, "menu.html", {"menu": menu, "footer":footer})
+
+
+def place_order(request):
+    if request.method == "POST":
+        menu_item_id = request.POST.get("menu_item")
+        quantity = int(request.POST.get("quantity"))
+        customer_name = request.POST.get("customer_name")
+        customer_phone = request.POST.get("customer_phone")
+
+        try:
+            menu_item = Ourmenu.objects.get(id=menu_item_id)
+
+            # Check if there is enough stock
+            if menu_item.stock >= quantity:
+                # Reduce stock
+                menu_item.stock -= quantity
+                menu_item.save()
+
+                # Save the order
+                Order.objects.create(
+                    menu_item=menu_item,
+                    quantity=quantity,
+                    customer_name=customer_name,
+                    customer_phone=customer_phone
+                )
+
+                # Check for low stock warning
+                if menu_item.stock <= 5:  # Adjust the threshold as needed
+                    messages.warning(request, f"⚠️ Warning: {menu_item.foodname} is running low on stock!")
+
+                messages.success(request, "✅ Order placed successfully!")
+            else:
+                messages.error(request, "❌ Not enough stock available!")
+
+        except Ourmenu.DoesNotExist:
+            messages.error(request, "❌ Menu item not found!")
+
+    return redirect("menu")  # Adjust to your menu URL
 
 
 from django.shortcuts import render, redirect, get_object_or_404

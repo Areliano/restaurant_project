@@ -4,7 +4,7 @@ from django.contrib import admin
 
 #from . models import Homepage
 
-from . models import Customer, Homepage, Restaurant, Aboutpage, Stories, Chefs, Ourmenu, Happy, Testimony, Aboutend, Contact, Footer
+from . models import Customer, Homepage, Restaurant, Aboutpage, Stories, Chefs, Ourmenu, Happy, Testimony, Aboutend, Contact, Footer, Table
 
 admin.site.register(Customer)
 
@@ -29,3 +29,5 @@ admin.site.register(Aboutend)
 admin.site.register(Contact)
 
 admin.site.register(Footer)
+
+admin.site.register(Table)

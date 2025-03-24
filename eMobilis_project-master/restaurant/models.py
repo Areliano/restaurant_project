@@ -29,17 +29,39 @@ class Homepage(models.Model):
         return self.heading
 
 
-class Customer(models.Model):
-    name = models.CharField(max_length=150, blank=False)
-    email = models.EmailField()
-    phone = models.CharField(max_length=100)
-    date = models.CharField(max_length=10, default='dd/mm/yyyy')
-    time = models.TimeField(max_length=50, default=timezone.now)
-    person = models.IntegerField()
+
+class Table(models.Model):
+    number = models.IntegerField(unique=True)  # Table number
+    seats = models.IntegerField()  # Number of seats
+    available = models.BooleanField(default=True)  # Table availability
 
     def __str__(self):
-        return self.name
+        return f"Table {self.number} - {'Available' if self.available else 'Booked'}"
 
+
+from django.core.validators import RegexValidator
+
+
+class Customer(models.Model):
+    name = models.CharField(
+        max_length=100,
+        validators=[RegexValidator(r'^[A-Za-z ]+$', message="Name can only contain letters and spaces.")]
+    )
+
+    email = models.EmailField()
+
+    phone = models.CharField(
+        max_length=10,  # ✅ Ensures only 10 characters are stored
+        validators=[RegexValidator(r'^\d{10}$', message="Phone number has to be 10 digits.")]
+    )  # ✅ Enforces exactly 10 digits
+
+    date = models.DateField(default=timezone.now)
+    time = models.TimeField(default=timezone.now)
+    person = models.IntegerField()
+    table = models.ForeignKey('Table', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} - Table {self.table.number if self.table else 'Not Assigned'}"
 
 #class Menu(models.Model):
  #   name = models.CharField(max_length=50, default='name')

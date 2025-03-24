@@ -56,19 +56,7 @@
                 </li>
 
 
-<!--
-                <li class="nav-item dropdown{% if nav == 'dropdown' %} active {% endif %} ">
-          <a class="nav-link dropdown-toggle" href="{% url 'dropdown' %}" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Dropdown
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item {% if nav == 'reservation' %} active {% endif %}" href=""{% url 'reservation' %}>Reservation</a></li>
-            <li><a class="dropdown-item {% if nav == 'booked' %} active {% endif %}" href=""{% url 'booked' %}>Booked</a></li>
-          </ul>
-        </li>
-
--->
-	        	<li class="nav-item {% if nav == 'blog' %} active {% endif %}">
+	<li class="nav-item {% if nav == 'blog' %} active {% endif %}">
                     <a href="{% url 'blog' %}" class="nav-link">Stories</a>
                 </li>
 	          <li class="nav-item {% if nav == 'contact' %} active {% endif %}">

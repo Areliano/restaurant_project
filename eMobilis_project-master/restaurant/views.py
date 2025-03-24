@@ -67,29 +67,13 @@ def menu(request):
     return render(request, "menu.html", {"menu": menu, "footer":footer})
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Customer, Table
+from django.utils import timezone
+
 def reservation(request):
-    footer = Footer.objects.all()
-    return render(request, "reservation.html", {"link": "reservation", "footer":footer })
-
-
-def booked(request):
-    customers = Customer.objects.all()
-    footer = Footer.objects.all()
-    return render(request, "booked.html", {"link": "booked", "data": customers, "footer":footer})
-
-
-def dropdown(request):
-    return render(request, "dropdown.html", {"link": "dropdown"})
-
-
-def delete(request, id):
-    satisfied_customer = Customer.objects.get(id=id)
-
-    satisfied_customer.delete()
-    footer = Footer.objects.all()
-
-    return render(request, 'booked.html', {"footer":footer})
-
+    tables = Table.objects.filter(available=True)  # Fetch only available tables
+    return render(request, "reservation.html", {"tables": tables})
 
 def insertdata(request):
     if request.method == 'POST':
@@ -98,46 +82,41 @@ def insertdata(request):
         phone = request.POST.get('phone')
         date = request.POST.get('date')
         time = request.POST.get('time')
-        person = request.POST.get('person')
+        person = int(request.POST.get('person'))
 
-        Customer1 = Customer(name=name, email=email, phone=phone, date=date, time=time, person=person)
-        Customer1.save()
-        return redirect("/booked")
+        # Find an available table that fits the group size
+        table = Table.objects.filter(seats__gte=person, available=True).first()
+
+        if table:
+            # Create the reservation
+            customer = Customer(name=name, email=email, phone=phone, date=date, time=time, person=person, table=table)
+            customer.save()
+
+            # Mark the table as booked
+            table.available = False
+            table.save()
+
+            return redirect("/booked")
+        else:
+            return render(request, "reservation.html", {"error": "No available tables for the selected size."})
 
     return redirect("/booked")
 
+def booked(request):
+    customers = Customer.objects.all()
+    return render(request, "booked.html", {"data": customers})
 
-def edit(request, id):
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        email = request.POST.get('email')
-        phone = request.POST.get('phone')
-        date = request.POST.get('date')
-        time = request.POST.get('time')
-        person = request.POST.get('person')
+def cancel_reservation(request, id):
+    customer = get_object_or_404(Customer, id=id)
 
-        satisfied_customer = Customer.objects.get(id=id)
+    # Free up the table
+    if customer.table:
+        table = customer.table
+        table.available = True
+        table.save()
 
-        satisfied_customer.name = name
-        satisfied_customer.email = email
-        satisfied_customer.phone = phone
-        satisfied_customer.datetime = date
-        satisfied_customer.time = time
-        satisfied_customer.person = person
-
-        satisfied_customer.save()
-    satisfied_customer = Customer.objects.get(id=id)
-
-    #   customers = Customer.objects.all()
-
-
-    return render(request, 'edit.html', {'Customer': satisfied_customer})
+    customer.delete()
     return redirect("/booked")
-
-
-# get.request.POST['name']
-
-#    return render(request, 'booked.html')
 
 
 def dummy(request):

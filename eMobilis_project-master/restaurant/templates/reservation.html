@@ -29,6 +29,19 @@
                         <h2 class="mb-4">Make Reservation</h2>
                     </div>
 
+                    <!-- ✅ Display success or error messages -->
+                    {% if message %}
+                        <div style="color: green; font-weight: bold; padding: 10px; border: 1px solid green; background: #d4edda; margin-bottom: 15px;">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+
+                    {% if error %}
+                        <div style="color: red; font-weight: bold; padding: 10px; border: 1px solid red; background: #f8d7da; margin-bottom: 15px;">
+                            {{ error }}
+                        </div>
+                    {% endif %}
+
                     <form action="{% url 'insertdata' %}" method="POST">
                         {% csrf_token %}
 

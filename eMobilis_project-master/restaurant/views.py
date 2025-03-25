@@ -62,88 +62,136 @@ def contact(request):
 #     return render(request, "index.html", {"link":"index"})
 
 
+#from django.shortcuts import render, redirect
+#from django.contrib import messages  # ✅ For displaying messages
+#from .models import Order, Ourmenu  # ✅ Ensure you use the correct model name (Ourmenu instead of MenuItem)
+
 def menu(request):
+    """Fetches menu items and footer details and renders the menu page."""
     menu = Ourmenu.objects.all()
     footer = Footer.objects.all()
-    return render(request, "menu.html", {"menu": menu, "footer":footer})
-
+    return render(request, "menu.html", {"menu": menu, "footer": footer})
 
 def place_order(request):
+    """Handles food ordering while checking stock availability."""
     if request.method == "POST":
         menu_item_id = request.POST.get("menu_item")
-        quantity = int(request.POST.get("quantity"))
-        customer_name = request.POST.get("customer_name")
-        customer_phone = request.POST.get("customer_phone")
+        quantity = request.POST.get("quantity", 1)  # ✅ Defaults to 1 if not provided
 
         try:
-            menu_item = Ourmenu.objects.get(id=menu_item_id)
+            quantity = int(quantity)  # ✅ Convert quantity to integer safely
+            menu_item = Ourmenu.objects.get(id=menu_item_id)  # ✅ Fetch menu item
 
-            # Check if there is enough stock
-            if menu_item.stock >= quantity:
-                # Reduce stock
-                menu_item.stock -= quantity
-                menu_item.save()
+            # ✅ Check stock availability
+            if menu_item.stock < quantity:
+                messages.error(request, f"❌ Sorry, {menu_item.foodname} is out of stock.")
+                return redirect("menu")  # Redirect back to the menu page
 
-                # Save the order
-                Order.objects.create(
-                    menu_item=menu_item,
-                    quantity=quantity,
-                    customer_name=customer_name,
-                    customer_phone=customer_phone
-                )
+            # ✅ Deduct stock and save
+            menu_item.stock -= quantity
+            menu_item.save()
 
-                # Check for low stock warning
-                if menu_item.stock <= 5:  # Adjust the threshold as needed
-                    messages.warning(request, f"⚠️ Warning: {menu_item.foodname} is running low on stock!")
+            # ✅ Save the order
+            Order.objects.create(
+                menu_item=menu_item,
+                quantity=quantity,
+                customer_name=request.POST.get("customer_name"),
+                customer_phone=request.POST.get("customer_phone"),
+            )
 
-                messages.success(request, "✅ Order placed successfully!")
-            else:
-                messages.error(request, "❌ Not enough stock available!")
+            # ✅ Check for low stock warning
+            if menu_item.stock <= 5:  # Adjust threshold as needed
+                messages.warning(request, f"⚠️ Warning: {menu_item.foodname} is running low on stock!")
+
+            messages.success(request, "✅ Your order has been placed successfully!")
+            return redirect("order_confirmation")  # ✅ Redirect to confirmation page
 
         except Ourmenu.DoesNotExist:
-            messages.error(request, "❌ Menu item not found!")
+            messages.error(request, "❌ Menu item not found.")
+        except ValueError:
+            messages.error(request, "❌ Invalid quantity. Please enter a valid number.")
+        except Exception as e:
+            messages.error(request, f"❌ An unexpected error occurred: {str(e)}")
 
-    return redirect("menu")  # Adjust to your menu URL
+    return redirect("menu")  # ✅ Redirect back to the menu if something goes wrong
+
 
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Customer, Table
+
 from django.utils import timezone
 
+from django.http import JsonResponse
+#from django.shortcuts import render, redirect
+from django.core.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt
+from .models import Customer, Table
+import json
+
 def reservation(request):
-    tables = Table.objects.filter(available=True)  # Fetch only available tables
+    """ Fetches only available tables and renders the reservation page. """
+    tables = Table.objects.filter(available=True)
     return render(request, "reservation.html", {"tables": tables})
 
+
+@csrf_exempt  # ✅ Allows testing without CSRF token (Remove in production)
 def insertdata(request):
+    """ Handles reservation submission while allowing existing emails to proceed with a message. """
     if request.method == 'POST':
-        name = request.POST.get('name')
-        email = request.POST.get('email')
-        phone = request.POST.get('phone')
-        date = request.POST.get('date')
-        time = request.POST.get('time')
-        person = int(request.POST.get('person'))
+        try:
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            date = request.POST.get('date')
+            time = request.POST.get('time')
+            person = request.POST.get('person')
 
-        # Find an available table that fits the group size
-        table = Table.objects.filter(seats__gte=person, available=True).first()
+            if not all([name, email, phone, date, time, person]):
+                return render(request, "reservation.html", {"error": "All fields are required!"})
 
-        if table:
-            # Create the reservation
-            customer = Customer(name=name, email=email, phone=phone, date=date, time=time, person=person, table=table)
-            customer.save()
+            # ✅ Check if the email is already used for a reservation
+            existing_customer = Customer.objects.filter(email=email).first()
+            if existing_customer:
+                return render(request, "reservation.html", {
+                    "message": f"Your reservation is already confirmed for {existing_customer.date} at {existing_customer.time}."
+                })
 
-            # Mark the table as booked
-            table.available = False
-            table.save()
+            # ✅ Find an available table that fits the group size
+            person = int(person)  # Ensure person count is an integer
+            table = Table.objects.filter(seats__gte=person, available=True).first()
 
-            return redirect("/booked")
-        else:
-            return render(request, "reservation.html", {"error": "No available tables for the selected size."})
+            if table:
+                # ✅ Create the reservation
+                customer = Customer.objects.create(
+                    name=name,
+                    email=email,
+                    phone=phone,
+                    date=date,
+                    time=time,
+                    person=person,
+                    table=table
+                )
 
-    return redirect("/booked")
+                # ✅ Mark the table as booked
+                table.available = False
+                table.save()
+
+                return redirect("/booked")  # ✅ Redirect to booking confirmation page
+            else:
+                return render(request, "reservation.html", {"error": "No available tables for the selected size."})
+
+        except ValidationError as e:
+            return render(request, "reservation.html", {"error": str(e)})
+        except Exception as e:
+            return render(request, "reservation.html", {"error": f"Something went wrong: {str(e)}"})
+
+    return redirect("/booked")  # ✅ Redirect if accessed via GET
+
 
 def booked(request):
     customers = Customer.objects.all()
     return render(request, "booked.html", {"data": customers})
+
 
 def cancel_reservation(request, id):
     customer = get_object_or_404(Customer, id=id)

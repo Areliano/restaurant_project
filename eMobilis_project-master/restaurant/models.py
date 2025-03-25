@@ -39,8 +39,9 @@ class Table(models.Model):
         return f"Table {self.number} - {'Available' if self.available else 'Booked'}"
 
 
-from django.core.validators import RegexValidator
 
+from django.core.validators import RegexValidator
+from django.utils import timezone
 
 class Customer(models.Model):
     name = models.CharField(
@@ -48,12 +49,12 @@ class Customer(models.Model):
         validators=[RegexValidator(r'^[A-Za-z ]+$', message="Name can only contain letters and spaces.")]
     )
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True)  # ✅ Ensure each email can only have one reservation
 
     phone = models.CharField(
-        max_length=10,  # ✅ Ensures only 10 characters are stored
-        validators=[RegexValidator(r'^\d{10}$', message="Phone number has to be 10 digits.")]
-    )  # ✅ Enforces exactly 10 digits
+        max_length=10,
+        validators=[RegexValidator(r'^\d{10}$', message="Phone number must be exactly 10 digits.")]
+    )
 
     date = models.DateField(default=timezone.now)
     time = models.TimeField(default=timezone.now)
@@ -62,6 +63,9 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.name} - Table {self.table.number if self.table else 'Not Assigned'}"
+
+
+
 
 #class Menu(models.Model):
  #   name = models.CharField(max_length=50, default='name')
@@ -153,7 +157,7 @@ class Ourmenu(models.Model):
     foodimage = models.ImageField(upload_to='ourmenu')
     description = models.CharField(max_length=200, blank=False, null=False)
     price = models.PositiveIntegerField()
-    stock = models.PositiveIntegerField(default=10)  # Track available stock
+    stock = models.PositiveIntegerField(default=10)  # ✅ Track available stock
 
     def __str__(self):
         return f"{self.foodname} - Stock: {self.stock}"
@@ -167,18 +171,20 @@ class Order(models.Model):
     ])
     order_date = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        """✅ Validate stock availability before saving the order."""
+        if self.menu_item.stock < self.quantity:
+            raise ValidationError(f"Order cannot be placed. {self.menu_item.foodname} is out of stock.")
+
     def save(self, *args, **kwargs):
-        if self.menu_item.stock >= self.quantity:
-            self.menu_item.stock -= self.quantity  # Reduce stock
-            self.menu_item.save()  # Save the updated stock
-            super().save(*args, **kwargs)  # Save the order
-        else:
-            raise ValueError("Order cannot be placed. Item is out of stock.")
+        """✅ Deduct stock only when order is valid."""
+        self.clean()  # ✅ Call clean() to check stock before saving
+        self.menu_item.stock -= self.quantity  # ✅ Reduce stock
+        self.menu_item.save()  # ✅ Save updated stock
+        super().save(*args, **kwargs)  # ✅ Save the order
 
     def __str__(self):
         return f"Order for {self.menu_item.foodname} - {self.quantity} items"
-
-
 class Happy(models.Model):
     text1 = models.CharField(max_length=500, default='text1')
     text2 = models.CharField(max_length=500, default='text2')

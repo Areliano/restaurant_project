@@ -48,7 +48,7 @@ class Customer(models.Model):
         validators=[RegexValidator(r'^[A-Za-z ]+$', message="Name can only contain letters and spaces.")]
     )
 
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
 
     phone = models.CharField(
         max_length=10,  # ✅ Ensures only 10 characters are stored

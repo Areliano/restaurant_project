@@ -66,36 +66,6 @@ class Customer(models.Model):
 
 
 
-
-#class Menu(models.Model):
- #   name = models.CharField(max_length=50, default='name')
-  #  heading = models.CharField(max_length=50, default='heading')
-    #BREAKFAST
-   # text1 = models.CharField(max_length=500, default='text1')
-    #text2 = models.CharField(max_length=500, default='text2')
-    #text3 = models.CharField(max_length=500, default='text3')
-#    text4 = models.CharField(max_length=500, default='text4')
-#    text5 = models.CharField(max_length=500, default='text5')
- #   text6 = models.CharField(max_length=500, default='text6')
-  #  text7 = models.CharField(max_length=500, default='text4')
-   # text8 = models.CharField(max_length=500, default='text5')
-    #text9 = models.CharField(max_length=500, default='text6')
-#    text10 = models.CharField(max_length=500, default='text4')
- #   text11 = models.CharField(max_length=500, default='text5')
-  #  text12 = models.CharField(max_length=500, default='text6')
-   # text16 = models.CharField(max_length=500, default='text4')
-    #text17 = models.CharField(max_length=500, default='text5')
-#    text18 = models.CharField(max_length=500, default='text6')
- #   text19 = models.CharField(max_length=500, default='text4')
-  #  text20 = models.CharField(max_length=500, default='text5')
-   # text21 = models.CharField(max_length=500, default='text6')
-
-  #  def __str__(self):
-  #      return self.name
-
-
-
-
 class Restaurant(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(max_length=200)
@@ -141,6 +111,7 @@ class Chefs(models.Model):
     def __str__(self):
         return self.name
 
+from django.core.exceptions import ValidationError
 
 class Ourmenu(models.Model):
     category_options = [
@@ -162,29 +133,40 @@ class Ourmenu(models.Model):
     def __str__(self):
         return f"{self.foodname} - Stock: {self.stock}"
 
+#from django.db import models
+#from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
+
 class Order(models.Model):
-    menu_item = models.ForeignKey(Ourmenu, on_delete=models.CASCADE)
+    menu_item = models.ForeignKey("Ourmenu", on_delete=models.CASCADE)  # Ensure "Ourmenu" is defined
     quantity = models.PositiveIntegerField()
     customer_name = models.CharField(max_length=100)
-    customer_phone = models.CharField(max_length=10, validators=[
-        RegexValidator(r'^\d{10}$', message="Phone number has to be 10 digits.")
-    ])
+    customer_phone = models.CharField(
+        max_length=10,
+        validators=[RegexValidator(r'^\d{10}$', message="Phone number must be 10 digits.")]
+    )
     order_date = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
         """✅ Validate stock availability before saving the order."""
-        if self.menu_item.stock < self.quantity:
-            raise ValidationError(f"Order cannot be placed. {self.menu_item.foodname} is out of stock.")
+        if self.pk is None:  # Ensures validation runs only for new orders
+            if self.menu_item.stock < self.quantity:
+                raise ValidationError(f"Order cannot be placed. {self.menu_item.foodname} is out of stock.")
 
     def save(self, *args, **kwargs):
-        """✅ Deduct stock only when order is valid."""
-        self.clean()  # ✅ Call clean() to check stock before saving
-        self.menu_item.stock -= self.quantity  # ✅ Reduce stock
-        self.menu_item.save()  # ✅ Save updated stock
-        super().save(*args, **kwargs)  # ✅ Save the order
+        """✅ Deduct stock only when order is valid and prevent accidental overwrites."""
+        self.clean()  # Validate before saving
+
+        super().save(*args, **kwargs)  # ✅ First, save order before modifying stock
+
+        # ✅ Deduct stock only for new orders
+        self.menu_item.stock -= self.quantity
+        self.menu_item.save()
 
     def __str__(self):
         return f"Order for {self.menu_item.foodname} - {self.quantity} items"
+
+
 class Happy(models.Model):
     text1 = models.CharField(max_length=500, default='text1')
     text2 = models.CharField(max_length=500, default='text2')

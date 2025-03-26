@@ -167,6 +167,7 @@ class Order(models.Model):
         return f"Order for {self.menu_item.foodname} - {self.quantity} items"
 
 
+
 class Happy(models.Model):
     text1 = models.CharField(max_length=500, default='text1')
     text2 = models.CharField(max_length=500, default='text2')

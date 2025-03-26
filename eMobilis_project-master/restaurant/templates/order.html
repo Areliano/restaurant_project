@@ -1,0 +1,78 @@
+{% extends 'common.html' %}
+{% load static %}
+
+{% block body %}
+
+<section class="hero-wrap hero-wrap-2" style="background-image: url('{% static 'images/bg_4.jpg' %}');" data-stellar-background-ratio="0.5">
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="row no-gutters slider-text align-items-center justify-content-center">
+            <div class="col-md-9 ftco-animate text-center" style="background: #ffc4c4; padding: 15px; border-radius: 10px;">
+                <h1 class="mb-2 bread">Order Confirmation</h1>
+                <p class="breadcrumbs">
+                    <span class="mr-2"><a href="{% url 'menu' %}">Menu <i class="ion-ios-arrow-forward"></i></a></span>
+                    <span>Orders <i class="ion-ios-arrow-forward"></i></span>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="ftco-section" style="background: #ffc4c4; padding: 40px 0;">
+    <div class="container">
+        <!-- ✅ Display Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8 text-center heading-section ftco-animate">
+                <span class="subheading">Orders</span>
+                <h2 class="mb-4">All Placed Orders</h2>
+            </div>
+        </div>
+
+        {% if orders %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover text-center">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Food Item</th>
+                        <th>Quantity</th>
+                        <th>Customer Name</th>
+                        <th>Phone</th>
+                        <th>Order Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ order.menu_item.foodname }}</td>  <!-- ✅ Fixed: Display food item name -->
+                            <td>{{ order.quantity }}</td>
+                            <td>{{ order.customer_name }}</td>  <!-- ✅ Fixed: Correct field -->
+                            <td>{{ order.customer_phone }}</td> <!-- ✅ Fixed: Correct field -->
+                            <td>{{ order.order_date|date:"M d, Y h:i A" }}</td>  <!-- ✅ Added readable format -->
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-danger font-weight-bold">❌ No orders have been placed yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p class="text-center text-danger font-weight-bold">❌ No orders have been placed yet.</p>
+        {% endif %}
+
+        <div class="text-center">
+            <a href="{% url 'menu' %}" class="btn btn-dark py-3 px-5 mt-4">Back to Menu</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

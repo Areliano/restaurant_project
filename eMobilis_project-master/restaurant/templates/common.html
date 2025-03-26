@@ -51,6 +51,9 @@
 	        	<li class="nav-item {% if nav == 'menu' %} active {% endif %}">
                     <a href="{% url 'menu' %}" class="nav-link">Specialties</a>
                 </li>
+                <li class="nav-item {% if nav == 'order' %} active {% endif %}">
+                    <a href="{% url 'order' %}" class="nav-link">Orders</a>
+                </li>
                 <li class="nav-item {% if nav == 'reservation' %} active {% endif %}">
                     <a href="{% url 'reservation' %}" class="nav-link">Reservation</a>
                 </li>

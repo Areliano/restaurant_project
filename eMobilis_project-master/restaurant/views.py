@@ -58,41 +58,33 @@ def contact(request):
     return render(request, "contact.html", {"contact": contact, "footer":footer})
 
 
-# def index(request):
-#     return render(request, "index.html", {"link":"index"})
-
-
-#from django.shortcuts import render, redirect
-#from django.contrib import messages  # ✅ For displaying messages
-#from .models import Order, Ourmenu  # ✅ Ensure you use the correct model name (Ourmenu instead of MenuItem)
+def order(request):
+    """Displays all orders placed by customers."""
+    all_orders = Order.objects.all().order_by("-order_date")  # Orders sorted by latest first
+    return render(request, "order.html", {"orders": all_orders})
 
 def menu(request):
     """Fetches menu items and footer details and renders the menu page."""
     menu = Ourmenu.objects.all()
-    footer = Footer.objects.all()
-    return render(request, "menu.html", {"menu": menu, "footer": footer})
+    return render(request, "menu.html", {"menu": menu})
 
 def place_order(request):
     """Handles food ordering while checking stock availability."""
     if request.method == "POST":
         menu_item_id = request.POST.get("menu_item")
-        quantity = request.POST.get("quantity", 1)  # ✅ Defaults to 1 if not provided
+        quantity = request.POST.get("quantity", 1)  # Default to 1 if not provided
 
         try:
-            quantity = int(quantity)  # ✅ Convert quantity to integer safely
-            menu_item = Ourmenu.objects.get(id=menu_item_id)  # ✅ Fetch menu item
+            quantity = int(quantity)  # Convert quantity to integer safely
+            menu_item = Ourmenu.objects.get(id=menu_item_id)  # Fetch menu item
 
-            # ✅ Check stock availability
+            # ✅ Check stock availability before placing order
             if menu_item.stock < quantity:
                 messages.error(request, f"❌ Sorry, {menu_item.foodname} is out of stock.")
                 return redirect("menu")  # Redirect back to the menu page
 
-            # ✅ Deduct stock and save
-            menu_item.stock -= quantity
-            menu_item.save()
-
-            # ✅ Save the order
-            Order.objects.create(
+            # ✅ Save the order (stock deduction is handled in Order model)
+            order = Order.objects.create(
                 menu_item=menu_item,
                 quantity=quantity,
                 customer_name=request.POST.get("customer_name"),
@@ -104,7 +96,7 @@ def place_order(request):
                 messages.warning(request, f"⚠️ Warning: {menu_item.foodname} is running low on stock!")
 
             messages.success(request, "✅ Your order has been placed successfully!")
-            return redirect("order_confirmation")  # ✅ Redirect to confirmation page
+            return redirect("order")  # Redirect to order list page
 
         except Ourmenu.DoesNotExist:
             messages.error(request, "❌ Menu item not found.")
@@ -113,8 +105,7 @@ def place_order(request):
         except Exception as e:
             messages.error(request, f"❌ An unexpected error occurred: {str(e)}")
 
-    return redirect("menu")  # ✅ Redirect back to the menu if something goes wrong
-
+    return redirect("menu")  # Redirect back to the menu if something goes wrong
 
 
 from django.shortcuts import render, redirect, get_object_or_404

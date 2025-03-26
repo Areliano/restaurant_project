@@ -2,7 +2,7 @@
 from django.urls import path
 
 from . import views
-from .views import place_order
+from .views import place_order, order
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -14,6 +14,7 @@ urlpatterns = [
     path('reservation/', views.reservation, name='reservation'),
     path('insertdata/', views.insertdata, name='insertdata'),
     path('booked/', views.booked, name='booked'),
+    path("order/", order, name="order"),
     #path('delete/<int:id>/', views.delete, name='delete'),
    # path('edit/<int:id>/', views.edit, name='edit'),
     path('cancel/<int:id>/', views.cancel_reservation, name='cancel_reservation'),

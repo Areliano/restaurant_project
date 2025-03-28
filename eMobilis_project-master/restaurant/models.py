@@ -30,41 +30,42 @@ class Homepage(models.Model):
 
 
 
-class Table(models.Model):
-    number = models.IntegerField(unique=True)  # Table number
-    seats = models.IntegerField()  # Number of seats
-    available = models.BooleanField(default=True)  # Table availability
-
-    def __str__(self):
-        return f"Table {self.number} - {'Available' if self.available else 'Booked'}"
-
-
-
+from django.db import models
 from django.core.validators import RegexValidator
 from django.utils import timezone
 
-class Customer(models.Model):
+class Table(models.Model):
+    number = models.IntegerField(unique=True)
+    seats = models.IntegerField()
+    available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Table {self.number} - {self.seats} seats ({'Available' if self.available else 'Booked'})"
+
+class Reservation(models.Model):  # Changed from Customer to Reservation to avoid confusion
     name = models.CharField(
         max_length=100,
         validators=[RegexValidator(r'^[A-Za-z ]+$', message="Name can only contain letters and spaces.")]
     )
-
-    email = models.EmailField(unique=True)  # ✅ Ensure each email can only have one reservation
-
+    email = models.EmailField()
     phone = models.CharField(
         max_length=10,
         validators=[RegexValidator(r'^\d{10}$', message="Phone number must be exactly 10 digits.")]
     )
+    date = models.DateField()
+    time = models.TimeField()
+    person = models.PositiveIntegerField()
+    table = models.ForeignKey(Table, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    date = models.DateField(default=timezone.now)
-    time = models.TimeField(default=timezone.now)
-    person = models.IntegerField()
-    table = models.ForeignKey('Table', on_delete=models.SET_NULL, null=True, blank=True)
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Reservation'
+        verbose_name_plural = 'Reservations'
 
     def __str__(self):
-        return f"{self.name} - Table {self.table.number if self.table else 'Not Assigned'}"
-
-
+        return f"{self.name} - {self.date} {self.time} (Table {self.table.number if self.table else 'None'})"
 
 class Restaurant(models.Model):
     name = models.CharField(max_length=50)
@@ -113,6 +114,10 @@ class Chefs(models.Model):
 
 from django.core.exceptions import ValidationError
 
+from django.db import models
+from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
+
 class Ourmenu(models.Model):
     category_options = [
         ('breakfast', 'Breakfast'),
@@ -128,44 +133,91 @@ class Ourmenu(models.Model):
     foodimage = models.ImageField(upload_to='ourmenu')
     description = models.CharField(max_length=200, blank=False, null=False)
     price = models.PositiveIntegerField()
-    stock = models.PositiveIntegerField(default=10)  # ✅ Track available stock
+    stock = models.PositiveIntegerField(default=10)
 
     def __str__(self):
         return f"{self.foodname} - Stock: {self.stock}"
 
+
 #from django.db import models
-#from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, EmailValidator
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+
 
 class Order(models.Model):
-    menu_item = models.ForeignKey("Ourmenu", on_delete=models.CASCADE)  # Ensure "Ourmenu" is defined
+    menu_item = models.ForeignKey('Ourmenu', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
-    customer_name = models.CharField(max_length=100)
-    customer_phone = models.CharField(
+    client_name = models.CharField(
+        max_length=100,
+        validators=[RegexValidator(r'^[A-Za-z ]+$', "Name can only contain letters and spaces")]
+    )
+    client_phone = models.CharField(
         max_length=10,
-        validators=[RegexValidator(r'^\d{10}$', message="Phone number must be 10 digits.")]
+        validators=[RegexValidator(r'^\d{10}$', "Phone number must be 10 digits.")]
+    )
+    client_email = models.EmailField(
+        max_length=100,
+        validators=[EmailValidator()],
+        help_text="We'll send your order confirmation here",
+        blank=True,  # Allow blank temporarily for migration
+        default="no-email@example.com"  # Temporary default for existing records
     )
     order_date = models.DateTimeField(auto_now_add=True)
+    special_requests = models.TextField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Any special instructions for your order"
+    )
+
+    class Meta:
+        ordering = ['-order_date']
+        verbose_name = 'Customer Order'
+        verbose_name_plural = 'Customer Orders'
 
     def clean(self):
-        """✅ Validate stock availability before saving the order."""
-        if self.pk is None:  # Ensures validation runs only for new orders
+        """Validate stock availability and order details before saving."""
+        if not self.pk:  # Only validate for new orders
+            # Stock validation
             if self.menu_item.stock < self.quantity:
-                raise ValidationError(f"Order cannot be placed. {self.menu_item.foodname} is out of stock.")
+                raise ValidationError(
+                    f"Cannot place order. Only {self.menu_item.stock} {self.menu_item.foodname} available."
+                )
+
+            # Quantity validation
+            if self.quantity < 1:
+                raise ValidationError("Quantity must be at least 1")
+
+            # Email validation for new orders
+            if not self.client_email or self.client_email == "no-email@example.com":
+                raise ValidationError("Please provide a valid email address")
 
     def save(self, *args, **kwargs):
-        """✅ Deduct stock only when order is valid and prevent accidental overwrites."""
-        self.clean()  # Validate before saving
+        """
+        Save order with validation and stock management.
+        """
+        self.full_clean()  # Runs clean() and all field validations
 
-        super().save(*args, **kwargs)  # ✅ First, save order before modifying stock
+        is_new = not self.pk  # Check if this is a new order
 
-        # ✅ Deduct stock only for new orders
-        self.menu_item.stock -= self.quantity
-        self.menu_item.save()
+        super().save(*args, **kwargs)  # Save the order first
+
+        if is_new:
+            # Deduct stock only for new orders
+            self.menu_item.stock -= self.quantity
+            self.menu_item.save()
 
     def __str__(self):
-        return f"Order for {self.menu_item.foodname} - {self.quantity} items"
+        return (
+            f"Order #{self.id}: {self.quantity}x {self.menu_item.foodname} "
+            f"for {self.client_name} ({self.order_date.strftime('%Y-%m-%d %H:%M')})"
+        )
 
+    @property
+    def total_price(self):
+        """Calculate total price for the order."""
+        return self.quantity * self.menu_item.price
 
 
 class Happy(models.Model):

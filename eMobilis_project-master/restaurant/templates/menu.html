@@ -20,8 +20,7 @@
 
 <section class="ftco-section" style="background: #ffc4c4">
     <div class="container">
-
-        <!-- ✅ Display Messages Here -->
+        <!-- Display Messages Here -->
         {% if messages %}
             {% for message in messages %}
                 <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">
@@ -38,29 +37,31 @@
         </div>
 
         <div class="row">
-            {% for menu in menu %}
+            {% for item in menu %}
             <div class="col-md-6 col-lg-4 menu-wrap">
                 <div class="heading-menu text-center ftco-animate">
-                    <h3>{{ menu.category }}</h3>
+                    <h3>{{ item.category }}</h3>
                 </div>
                 <div class="menus d-flex ftco-animate">
-                    <div class="menu-img img" style="background-image: url('{{ menu.foodimage.url }}');"></div>
+                    <div class="menu-img img" style="background-image: url('{{ item.foodimage.url }}');"></div>
                     <div class="text">
                         <div class="d-flex">
                             <div class="one-half">
-                                <h3>{{ menu.foodname }}</h3>
+                                <h3>{{ item.foodname }}</h3>
                             </div>
                             <div class="one-forth">
-                                <span class="price">{{ menu.price }}</span>
+                                <span class="price">KSh {{ item.price }}</span>
                             </div>
                         </div>
-                        <p><span>{{ menu.description }}</span></p>
+                        <p><span>{{ item.description }}</span></p>
 
-                        {% if menu.stock > 0 %}
-                            {% if menu.stock <= 5 %}
-                                <p style="color: red; font-weight: bold;">⚠️ Low stock: Only {{ menu.stock }} left!</p>
+                        {% if item.stock > 0 %}
+                            {% if item.stock <= 5 %}
+                                <p style="color: red; font-weight: bold;">⚠️ Low stock: Only {{ item.stock }} left!</p>
                             {% endif %}
-                            <button class="btn btn-success order-now-btn" data-id="{{ menu.id }}">Order Now</button>
+                            <button class="btn btn-success order-now-btn" data-id="{{ item.id }}" data-name="{{ item.foodname }}">
+                                Order Now
+                            </button>
                         {% else %}
                             <button class="btn btn-danger" disabled>Out of Stock</button>
                         {% endif %}
@@ -84,21 +85,44 @@ document.addEventListener("DOMContentLoaded", function() {
     document.querySelectorAll(".order-now-btn").forEach(button => {
         button.addEventListener("click", function() {
             let menuId = this.getAttribute("data-id");
+            let menuName = this.getAttribute("data-name");
 
             let orderForm = `
                 <div class="order-popup">
-                    <h2>Place Your Order</h2>
+                    <h2>Order ${menuName}</h2>
                     <form method="POST" action="{% url 'place_order' %}">
                         {% csrf_token %}
-                        <input type="hidden" name="menu_item" value="${menuId}"> <br>
-                        <label>Quantity:</label>
-                        <input type="number" name="quantity" min="1" required> <br> <br>
-                        <label>Name:</label>
-                        <input type="text" name="customer_name" pattern="[A-Za-z ]+" required> <br> <br>
-                        <label>Phone:</label>
-                        <input type="tel" name="customer_phone" pattern="[0-9]{10}" required> <br> <br>
-                        <button type="submit" class="btn btn-success">Submit Order</button> <br> <br>
-                        <button type="button" class="btn btn-danger close-popup">Cancel</button> <br> <br>
+                        <input type="hidden" name="menu_item" value="${menuId}">
+
+                        <div class="form-group">
+                            <label>Quantity:</label>
+                            <input type="number" name="quantity" min="1" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Full Name:</label>
+                            <input type="text" name="client_name" pattern="[A-Za-z ]+" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <input type="email" name="client_email" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Phone Number:</label>
+                            <input type="tel" name="client_phone" pattern="[0-9]{10}" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Special Requests (Optional):</label>
+                            <textarea name="special_requests" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-success">Place Order</button>
+                            <button type="button" class="btn btn-danger close-popup">Cancel</button>
+                        </div>
                     </form>
                 </div>
             `;
@@ -125,25 +149,77 @@ document.addEventListener("DOMContentLoaded", function() {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 9999;
 }
 
 .order-popup {
     background: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    width: 50%;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s ease-out;
 }
 
-.close-popup {
-    margin-top: 10px;
+.order-popup h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.btn {
+    padding: 8px 20px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 4px;
     cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 576px) {
+    .order-popup {
+        width: 95%;
+        padding: 15px;
+    }
 }
 </style>
 

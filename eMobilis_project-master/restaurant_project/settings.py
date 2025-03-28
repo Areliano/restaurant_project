@@ -126,9 +126,30 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'johnchuli982@gmail.com'  # Replace with your Gmail
-EMAIL_HOST_PASSWORD = 'qqenumdlwkvrkxii'  # Use App Password for security
+EMAIL_USE_SSL = False  # Important: Must be False when using TLS
+EMAIL_TIMEOUT = 10  # Timeout in seconds for SMTP operations
+EMAIL_HOST_USER = 'johnchuli982@gmail.com'  # Your Gmail address
+EMAIL_HOST_PASSWORD = 'qqenumdlwkvrkxii'  # App-specific password
+
+# Email Display Settings
+SITE_NAME = "Chuli Restaurant"  # Your restaurant name
+DEFAULT_FROM_EMAIL = 'Chuli Restaurant <johnchuli982@gmail.com>'  # Format: "Name <email>"
+REPLY_TO_EMAIL = 'info@chulirestaurant.com'  # For customer replies
+CONTACT_PHONE = "+254 700 123456"  # Your restaurant phone number
+SERVER_EMAIL = 'alerts@chulirestaurant.com'  # For error notifications
+
+# Email Security Settings
+EMAIL_SSL_CERTFILE = None  # Path to certificate if needed
+EMAIL_SSL_KEYFILE = None  # Path to private key if needed
+EMAIL_SUBJECT_PREFIX = '[Chuli] '  # Prefix for all email subjects
+
+# Email Headers
+EMAIL_EXTRA_HEADERS = {
+    'X-Entity-Ref-ID': 'CHULI-RESTAURANT',  # For tracking in mail servers
+    'X-Mailer': 'Django Restaurant System'
+}

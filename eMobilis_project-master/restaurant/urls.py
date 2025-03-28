@@ -11,12 +11,17 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('menu/', views.menu, name='menu'),
     path("place_order/", place_order, name="place_order"),
-    path('reservation/', views.reservation, name='reservation'),
-    path('insertdata/', views.insertdata, name='insertdata'),
-    path('booked/', views.booked, name='booked'),
+    #path('reservation/', views.reservation, name='reservation'),
+    #path('insertdata/', views.insertdata, name='insertdata'),
+    #path('booked/', views.booked, name='booked'),
     path("order/", order, name="order"),
     #path('delete/<int:id>/', views.delete, name='delete'),
    # path('edit/<int:id>/', views.edit, name='edit'),
+    #path('cancel/<int:id>/', views.cancel_reservation, name='cancel_reservation'),
+    path('reservation/', views.reservation, name='reservation'),
+    path('insertdata/', views.insertdata, name='insertdata'),
+    path('booked/', views.booked, name='booked'),
     path('cancel/<int:id>/', views.cancel_reservation, name='cancel_reservation'),
+    path('edit/<int:id>/', views.edit_reservation, name='edit_reservation'),  # Add this line
 
 ]

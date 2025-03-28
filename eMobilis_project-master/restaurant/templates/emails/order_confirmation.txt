@@ -1,0 +1,7 @@
+Thank you for your order at {{ site_name }}!
+
+Order #{{ order.id }}
+Item: {{ order.quantity }} × {{ order.menu_item.foodname }}
+Total: KSh {{ order.total_price }}
+
+Questions? Contact us at {{ contact_email }} or {{ contact_phone }}

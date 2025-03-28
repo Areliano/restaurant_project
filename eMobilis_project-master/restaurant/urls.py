@@ -2,7 +2,7 @@
 from django.urls import path
 
 from . import views
-from .views import place_order, order
+from .views import place_order, order, register_view, login_view, logout_view
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -23,5 +23,8 @@ urlpatterns = [
     path('booked/', views.booked, name='booked'),
     path('cancel/<int:id>/', views.cancel_reservation, name='cancel_reservation'),
     path('edit/<int:id>/', views.edit_reservation, name='edit_reservation'),  # Add this line
-
+    path('register/', register_view, name='register'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
 ]
+

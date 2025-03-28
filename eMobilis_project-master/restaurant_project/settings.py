@@ -27,7 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+LOGIN_REDIRECT_URL = 'index'  # The page you want to redirect to after login
+LOGOUT_REDIRECT_URL = 'login'  # The page you want to redirect to after logout
 # Application definition
 
 INSTALLED_APPS = [

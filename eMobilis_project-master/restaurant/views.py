@@ -2,8 +2,6 @@ from django.shortcuts import render, redirect
 
 from .models import Restaurant, Aboutpage, Homepage, Stories, Chefs, Ourmenu, Happy, Testimony, Aboutend, Contact, Footer, Order
 
-from django.utils import timezone
-
 from django.http import HttpResponse
 from django.contrib import messages
 
@@ -12,6 +10,11 @@ from django.contrib import messages
 
 
 # Create your views
+
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+
 
 def index(request):
     index = Homepage.objects.all()
@@ -25,6 +28,54 @@ def index(request):
     context = {"index": index, "chefs": chefs, "breakfast": breakfasts, "footer":footer, "about":about, "menu":menu, "happy":happy, "testimony":testimony, "footer":footer }
     return render(request, 'index.html', context)
 
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            next_url = request.GET.get('next', 'index')
+            return redirect(next_url)
+        else:
+            messages.error(request, 'Invalid username or password')
+
+    return render(request, 'login.html')
+
+
+def register_view(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Registration successful!')
+            return redirect('index')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'register.html', {'form': form})
+
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+# Add all your other view functions below (about, blog, contact, menu, etc.)
+# Make sure to add @login_required decorator to views that need authentication
 
 def stories(request):
     stories = Stories.objects.all()
@@ -185,29 +236,74 @@ def reservation(request):
     })
 
 
+
+from django.utils import timezone
+from datetime import datetime, time as datetime_time
+from .models import Table, Reservation
+import logging
+
+
 def insertdata(request):
     if request.method == 'POST':
         try:
-            # Get form data
-            name = request.POST.get('name')
-            email = request.POST.get('email')
-            phone = request.POST.get('phone')
-            date = request.POST.get('date')
-            time = request.POST.get('time')
-            person = int(request.POST.get('person'))
-            table_id = request.POST.get('table')
+            # Get and sanitize form data
+            name = request.POST.get('name', '').strip()
+            email = request.POST.get('email', '').strip().lower()
+            phone = request.POST.get('phone', '').strip()
+            date = request.POST.get('date', '').strip()
+            time = request.POST.get('time', '').strip()
+            person = request.POST.get('person', '0').strip()
+            table_id = request.POST.get('table', '').strip()
 
             # Validate required fields
             if not all([name, email, phone, date, time, person, table_id]):
                 messages.error(request, "All fields are required!")
                 return redirect('reservation')
 
+            # Convert and validate person count
+            try:
+                person = int(person)
+                if person < 1:
+                    raise ValueError("At least 1 person required")
+            except ValueError:
+                messages.error(request, "Please enter a valid number of people")
+                return redirect('reservation')
+
+            # Validate date and time
+            try:
+                reservation_datetime = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+                # Make the datetime timezone aware
+                reservation_datetime = timezone.make_aware(reservation_datetime)
+
+                if reservation_datetime < timezone.now():
+                    messages.error(request, "Cannot book for past dates/times")
+                    return redirect('reservation')
+
+                # Validate business hours (8AM to 10PM)
+                opening_time = datetime_time(8, 0)
+                closing_time = datetime_time(22, 0)
+                if not (opening_time <= reservation_datetime.time() <= closing_time):
+                    messages.error(request, "We're only open from 8:00 AM to 10:00 PM")
+                    return redirect('reservation')
+
+            except ValueError:
+                messages.error(request, "Invalid date or time format")
+                return redirect('reservation')
+
             # Check if table exists and is available
-            table = get_object_or_404(Table, id=table_id, available=True)
+            table = get_object_or_404(Table, id=table_id)
+
+            if not table.available:
+                messages.error(request, f"Table {table.number} is already booked")
+                return redirect('reservation')
 
             # Check if table has enough seats
             if table.seats < person:
-                messages.warning(request, f"Table {table.number} only has {table.seats} seats (you selected {person}).")
+                messages.warning(
+                    request,
+                    f"Table {table.number} only has {table.seats} seats (you selected {person}). "
+                    "Please choose a larger table."
+                )
                 return redirect('reservation')
 
             # Create reservation
@@ -225,16 +321,25 @@ def insertdata(request):
             table.available = False
             table.save()
 
-            messages.success(request, f"Reservation confirmed for {date} at {time} (Table {table.number})")
+            # Success message with reservation details
+            messages.success(
+                request,
+                f"Reservation confirmed for {reservation_datetime.strftime('%A, %B %d at %I:%M %p')} "
+                f"(Table {table.number} for {person} people). Confirmation sent to {email}"
+            )
+
             return redirect('booked')
 
         except Exception as e:
-            messages.error(request, f"Error: {str(e)}")
+            messages.error(
+                request,
+                "An error occurred while processing your reservation. "
+                "Please try again or contact us if the problem persists."
+            )
+            logger.error(f"Reservation error: {str(e)}", exc_info=True)
             return redirect('reservation')
 
     return redirect('reservation')
-
-
 def booked(request):
     reservations = Reservation.objects.select_related('table').order_by('-created_at')
     return render(request, "booked.html", {"reservations": reservations})
@@ -253,32 +358,125 @@ def cancel_reservation(request, id):
     return redirect('booked')
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from datetime import datetime, time as datetime_time
+from .models import Reservation, Table
+import logging
+
+
 def edit_reservation(request, id):
     reservation = get_object_or_404(Reservation, id=id)
-    available_tables = Table.objects.filter(available=True) | Table.objects.filter(id=reservation.table.id)
+
+    # Get available tables plus the currently reserved table
+    available_tables = (Table.objects.filter(available=True) |
+                        Table.objects.filter(id=reservation.table.id)).distinct().order_by('number')
 
     if request.method == 'POST':
         try:
-            # Get form data
-            reservation.name = request.POST.get('name')
-            reservation.email = request.POST.get('email')
-            reservation.phone = request.POST.get('phone')
-            reservation.date = request.POST.get('date')
-            reservation.time = request.POST.get('time')
-            reservation.person = int(request.POST.get('person'))
+            # Get and sanitize form data
+            name = request.POST.get('name', '').strip()
+            email = request.POST.get('email', '').strip().lower()
+            phone = request.POST.get('phone', '').strip()
+            date = request.POST.get('date', '').strip()
+            time = request.POST.get('time', '').strip()
+            person = request.POST.get('person', '0').strip()
+            new_table_id = request.POST.get('table', '').strip()
 
-            # Save changes
+            # Validate required fields
+            if not all([name, email, phone, date, time, person, new_table_id]):
+                messages.error(request, "All fields are required!")
+                return redirect('edit_reservation', id=id)
+
+            # Convert and validate person count
+            try:
+                person = int(person)
+                if person < 1:
+                    raise ValueError("At least 1 person required")
+            except ValueError:
+                messages.error(request, "Please enter a valid number of people")
+                return redirect('edit_reservation', id=id)
+
+            # Validate date and time
+            try:
+                reservation_datetime = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+                # Make the datetime timezone aware
+                reservation_datetime = timezone.make_aware(reservation_datetime)
+
+                if reservation_datetime < timezone.now():
+                    messages.error(request, "Cannot book for past dates/times")
+                    return redirect('edit_reservation', id=id)
+
+                # Validate business hours (8AM to 10PM)
+                opening_time = datetime_time(8, 0)
+                closing_time = datetime_time(22, 0)
+                if not (opening_time <= reservation_datetime.time() <= closing_time):
+                    messages.error(request, "We're only open from 8:00 AM to 10:00 PM")
+                    return redirect('edit_reservation', id=id)
+
+            except ValueError:
+                messages.error(request, "Invalid date or time format")
+                return redirect('edit_reservation', id=id)
+
+            # Get the new table
+            new_table = get_object_or_404(Table, id=new_table_id)
+
+            # Check if new table is available (unless it's the same table)
+            if new_table != reservation.table and not new_table.available:
+                messages.error(request, f"Table {new_table.number} is already booked")
+                return redirect('edit_reservation', id=id)
+
+            # Check if new table has enough seats
+            if new_table.seats < person:
+                messages.warning(
+                    request,
+                    f"Table {new_table.number} only has {new_table.seats} seats "
+                    f"(you selected {person}). Please choose a larger table."
+                )
+                return redirect('edit_reservation', id=id)
+
+            # Handle table changes
+            old_table = reservation.table
+            if new_table != old_table:
+                # Release old table
+                old_table.available = True
+                old_table.save()
+
+                # Reserve new table
+                new_table.available = False
+                new_table.save()
+
+            # Update reservation
+            reservation.name = name
+            reservation.email = email
+            reservation.phone = phone
+            reservation.date = date
+            reservation.time = time
+            reservation.person = person
+            reservation.table = new_table
             reservation.save()
 
-            messages.success(request, "Reservation updated successfully")
+            messages.success(
+                request,
+                f"Reservation updated successfully for {reservation_datetime.strftime('%A, %B %d at %I:%M %p')} "
+                f"(Table {new_table.number} for {person} people)."
+            )
             return redirect('booked')
 
         except Exception as e:
-            messages.error(request, f"Error updating reservation: {str(e)}")
+            messages.error(
+                request,
+                "An error occurred while updating your reservation. "
+                "Please try again or contact us if the problem persists."
+            )
+            logger.error(f"Reservation update error: {str(e)}", exc_info=True)
+            return redirect('edit_reservation', id=id)
 
     return render(request, "edit.html", {
         "reservation": reservation,
-        "tables": available_tables.distinct().order_by('number')
+        "tables": available_tables,
+        "min_date": timezone.now().strftime('%Y-%m-%d')  # For date input min attribute
     })
 
 def dummy(request):
@@ -290,46 +488,3 @@ def dummy(request):
 def footer(request):
     footer = Footer.objects.all()
     return render(request, 'common.html', {"footer":footer})
-
-# restaurant/views.py
-
-from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required
-
-from .forms import CustomUserCreationForm, CustomAuthenticationForm
-
-def register_view(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Registration successful!")
-            return redirect('index')  # Replace 'home' with your homepage URL name
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'register.html', {'form': form})
-
-def login_view(request):
-    if request.method == 'POST':
-        form = CustomAuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            messages.success(request, f"Welcome back, {user.username}!")
-            return redirect('index')  # Replace 'home' with your homepage URL name
-        else:
-            messages.error(request, "Invalid username or password.")
-    else:
-        form = CustomAuthenticationForm()
-    return render(request, 'login.html', {'form': form})
-
-@login_required
-def logout_view(request):
-    logout(request)
-    messages.info(request, "You have been logged out.")
-    return redirect('login')  # Redirect to login page after logout

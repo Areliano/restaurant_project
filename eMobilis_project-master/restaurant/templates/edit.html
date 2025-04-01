@@ -29,8 +29,11 @@
 
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %}">
+                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show">
                             {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
                         </div>
                     {% endfor %}
                 {% endif %}
@@ -40,44 +43,79 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Name</label>
-                                <input type="text" class="form-control" name="name" value="{{ reservation.name }}" required>
+                                <label>Full Name</label>
+                                <input type="text" class="form-control" name="name"
+                                       value="{{ reservation.name }}" required
+                                       pattern="[A-Za-z ]+" title="Letters only">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Email</label>
-                                <input type="email" class="form-control" name="email" value="{{ reservation.email }}" required>
+                                <input type="email" class="form-control" name="email"
+                                       value="{{ reservation.email }}" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Phone</label>
-                                <input type="tel" class="form-control" name="phone" value="{{ reservation.phone }}" required>
+                                <label>Phone Number</label>
+                                <input type="tel" class="form-control" name="phone"
+                                       value="{{ reservation.phone }}" required
+                                       pattern="[0-9+]{10,15}" title="10-15 digit phone number">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Date</label>
-                                <input type="date" class="form-control" name="date" value="{{ reservation.date|date:'Y-m-d' }}" required>
+                                <input type="date" class="form-control" name="date"
+                                       value="{{ reservation.date|date:'Y-m-d' }}"
+                                       min="{{ min_date }}" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Time</label>
-                                <input type="time" class="form-control" name="time" value="{{ reservation.time|time:'H:i' }}" required>
+                                <input type="time" class="form-control" name="time"
+                                       value="{{ reservation.time|time:'H:i' }}"
+                                       min="08:00" max="22:00" required>
+                                <small class="form-text text-muted">We're open from 8:00 AM to 10:00 PM</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Number of People</label>
-                                <input type="number" class="form-control" name="person" value="{{ reservation.person }}" min="1" required>
+                                <input type="number" class="form-control" name="person"
+                                       value="{{ reservation.person }}" min="1" max="20" required>
                             </div>
                         </div>
-                        <div class="col-md-12 mt-3">
+                        <div class="col-md-12">
                             <div class="form-group">
-                                <button type="submit" class="btn btn-primary py-3 px-5">Update Reservation</button>
-                                <a href="{% url 'booked' %}" class="btn btn-secondary py-3 px-5">Cancel</a>
+                                <label>Select Table</label>
+                                <select class="form-control" name="table" required>
+                                    {% for table in tables %}
+                                        <option value="{{ table.id }}"
+                                            {% if table.id == reservation.table.id %}selected{% endif %}
+                                            {% if not table.available and table.id != reservation.table.id %}disabled{% endif %}>
+                                            Table {{ table.number }} ({{ table.seats }} seats)
+                                            {% if not table.available and table.id != reservation.table.id %} - Booked{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mt-4">
+                            <div class="form-group d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary py-3 px-5">
+                                    <i class="fas fa-save mr-2"></i>Update Reservation
+                                </button>
+                                <a href="{% url 'booked' %}" class="btn btn-secondary py-3 px-5">
+                                    <i class="fas fa-times mr-2"></i>Cancel
+                                </a>
+                                <a href="{% url 'cancel_reservation' reservation.id %}"
+                                   class="btn btn-danger py-3 px-5"
+                                   onclick="return confirm('Are you sure you want to cancel this reservation?');">
+                                    <i class="fas fa-trash-alt mr-2"></i>Cancel Reservation
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -86,4 +124,26 @@
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Date validation
+    const dateInput = document.querySelector('input[name="date"]');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (dateInput.value < today) {
+        dateInput.value = today;
+    }
+
+    // Time validation
+    const timeInput = document.querySelector('input[name="time"]');
+    timeInput.addEventListener('change', function() {
+        const hours = parseInt(this.value.split(':')[0]);
+        if (hours < 8 || hours >= 22) {
+            alert('We only accept reservations between 8:00 AM and 10:00 PM');
+            this.value = '12:00';
+        }
+    });
+});
+</script>
 {% endblock %}

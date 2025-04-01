@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+LOGIN_URL = 'login'  # This is the crucial setting you were missing
 LOGIN_REDIRECT_URL = 'index'  # The page you want to redirect to after login
 LOGOUT_REDIRECT_URL = 'login'  # The page you want to redirect to after logout
 # Application definition
@@ -107,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'
 
 USE_I18N = True
 
@@ -138,19 +139,19 @@ EMAIL_HOST_USER = 'johnchuli982@gmail.com'  # Your Gmail address
 EMAIL_HOST_PASSWORD = 'qqenumdlwkvrkxii'  # App-specific password
 
 # Email Display Settings
-SITE_NAME = "Chuli Restaurant"  # Your restaurant name
-DEFAULT_FROM_EMAIL = 'Chuli Restaurant <johnchuli982@gmail.com>'  # Format: "Name <email>"
-REPLY_TO_EMAIL = 'info@chulirestaurant.com'  # For customer replies
-CONTACT_PHONE = "+254 700 123456"  # Your restaurant phone number
-SERVER_EMAIL = 'alerts@chulirestaurant.com'  # For error notifications
+SITE_NAME = "Baraka Rescue Restaurant"  # Your restaurant name
+DEFAULT_FROM_EMAIL = 'Baraka Rescue Restaurant <johnchuli982@gmail.com>'  # Format: "Name <email>"
+REPLY_TO_EMAIL = 'info@barakarescuerestaurant.com'  # For customer replies
+CONTACT_PHONE = "+254 114 601620"  # Your restaurant phone number
+SERVER_EMAIL = 'alerts@barakarescuerestaurant.com'  # For error notifications
 
 # Email Security Settings
 EMAIL_SSL_CERTFILE = None  # Path to certificate if needed
 EMAIL_SSL_KEYFILE = None  # Path to private key if needed
-EMAIL_SUBJECT_PREFIX = '[Chuli] '  # Prefix for all email subjects
+EMAIL_SUBJECT_PREFIX = '[BarakaRescueRestaurant] '  # Prefix for all email subjects
 
 # Email Headers
 EMAIL_EXTRA_HEADERS = {
-    'X-Entity-Ref-ID': 'CHULI-RESTAURANT',  # For tracking in mail servers
+    'X-Entity-Ref-ID': 'BARAKARESCUE-RESTAURANT',  # For tracking in mail servers
     'X-Mailer': 'Django Restaurant System'
 }

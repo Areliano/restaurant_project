@@ -138,3 +138,11 @@ models_to_register = [
 
 for model in models_to_register:
     admin.site.register(model)
+
+
+# Customizing Django Admin Branding
+#
+
+admin.site.site_header = "BARAKA RESCUE RESTAURANT ADMIN"
+admin.site.site_title = "Baraka Rescue Restaurant Panel"
+admin.site.index_title = "Manage Baraka's Data"

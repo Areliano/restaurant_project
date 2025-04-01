@@ -2,68 +2,103 @@
 {% load static %}
 
 {% block body %}
-<section class="hero-wrap hero-wrap-2" style="background-image: url('{% static 'images/bg_4.jpg' %}');">
-    <div class="overlay"></div>
+
+<section class="hero-wrap hero-wrap-2" style="background-image: url('{% static 'images/bg_4.jpg' %}');" data-stellar-background-ratio="0.5">
+    <div class="overlay" style="background: rgba(94, 25, 20, 0.7);"></div>
     <div class="container">
         <div class="row no-gutters slider-text align-items-center justify-content-center">
-            <div class="col-md-9 ftco-animate text-center" style="background: #ffc4c4">
-                <h1 class="mb-2 bread">Make Reservation</h1>
+            <div class="col-md-9 ftco-animate text-center" style="background: rgba(193, 154, 107, 0.9); padding: 2rem; border-radius: 5px;">
+                <h1 class="mb-2 bread" style="color: #fff; font-weight: 600; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">Table Reservation</h1>
                 <p class="breadcrumbs">
-                    <span class="mr-2"><a href="{% url 'index' %}">Home <i class="ion-ios-arrow-forward"></i></a></span>
-                    <span>Reservation <i class="ion-ios-arrow-forward"></i></span>
+                    <span class="mr-2" style="color: #fff;"><a href="{% url 'index' %}" style="color: #fff;">Home <i class="ion-ios-arrow-forward"></i></a></span>
+                    <span style="color: #fff;">Reservation <i class="ion-ios-arrow-forward"></i></span>
                 </p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="ftco-section ftco-no-pt ftco-no-pb" style="background: #ffc4c4">
+<section class="ftco-section ftco-no-pt ftco-no-pb" style="background: #F8F8F8;">
     <div class="container">
         <div class="row d-flex">
-            <div class="col-md-5 ftco-animate img img-2" style="background-image: url({% static 'images/bg_6.jpg' %});"></div>
+            <div class="col-md-5 ftco-animate img img-2 d-none d-md-block" style="background-image: url({% static 'images/bg_6.jpg' %}); min-height: 600px;">
+                <div class="overlay" style="background: rgba(0,0,0,0.1);"></div>
+            </div>
             <div class="col-md-7 ftco-animate makereservation p-4 p-md-5">
                 <div class="heading-section ftco-animate mb-5">
-                    <span class="subheading">Book a Table</span>
-                    <h2 class="mb-4">Make Reservation</h2>
+                    <span class="subheading" style="color: #C19A6B; letter-spacing: 1px;">Book Your Table</span>
+                    <h2 class="mb-4" style="color: #2C2C2C; font-weight: 700;">Make Reservation</h2>
                 </div>
 
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %}">
-                            {{ message }}
-                        </div>
+                    <div class="alert alert-{% if message.tags %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4"
+                         style="border-left: 4px solid {% if message.tags == 'error' %}#dc3545{% else %}#28a745{% endif %};">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
                     {% endfor %}
                 {% endif %}
 
-                <form action="{% url 'insertdata' %}" method="POST">
+                <form action="{% url 'insertdata' %}" method="POST" class="reservation-form">
                     {% csrf_token %}
-                    <div class="form-group">
-                        <label for="name">Full Name</label>
-                        <input type="text" class="form-control" name="name" required pattern="[A-Za-z ]+">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="color: #2C2C2C; font-weight: 500;">Full Name</label>
+                                <input type="text" class="form-control" name="name" required pattern="[A-Za-z ]+"
+                                       style="border: 1px solid #C19A6B; border-radius: 0;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="color: #2C2C2C; font-weight: 500;">Email</label>
+                                <input type="email" class="form-control" name="email" required
+                                       style="border: 1px solid #C19A6B; border-radius: 0;">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" class="form-control" name="email" required>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="color: #2C2C2C; font-weight: 500;">Phone</label>
+                                <input type="tel" class="form-control" name="phone" required pattern="\d{10}"
+                                       style="border: 1px solid #C19A6B; border-radius: 0;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="color: #2C2C2C; font-weight: 500;">Number of People</label>
+                                <input type="number" class="form-control" name="person" min="1" required
+                                       style="border: 1px solid #C19A6B; border-radius: 0;">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="phone">Phone</label>
-                        <input type="tel" class="form-control" name="phone" required pattern="\d{10}">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="color: #2C2C2C; font-weight: 500;">Date</label>
+                                <input type="date" class="form-control" name="date" required min="{{ min_date }}"
+                                       style="border: 1px solid #C19A6B; border-radius: 0;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label style="color: #2C2C2C; font-weight: 500;">Time</label>
+                                <input type="time" class="form-control" name="time" required
+                                       style="border: 1px solid #C19A6B; border-radius: 0;">
+                            </div>
+                        </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="date">Date</label>
-                        <input type="date" class="form-control" name="date" required min="{{ min_date }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="time">Time</label>
-                        <input type="time" class="form-control" name="time" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="person">Number of People</label>
-                        <input type="number" class="form-control" name="person" min="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="table">Select Table</label>
-                        <select class="form-control" name="table" required>
+                        <label style="color: #2C2C2C; font-weight: 500;">Select Table</label>
+                        <select class="form-control" name="table" required
+                                style="border: 1px solid #C19A6B; border-radius: 0;">
                             {% for table in tables %}
                                 <option value="{{ table.id }}">Table {{ table.number }} ({{ table.seats }} seats)</option>
                             {% empty %}
@@ -71,12 +106,66 @@
                             {% endfor %}
                         </select>
                     </div>
+
                     <div class="form-group mt-4">
-                        <button type="submit" class="btn btn-primary py-3 px-5">Confirm Reservation</button>
+                        <button type="submit" class="btn btn-primary py-3 px-5"
+                                style="background: #5E1914; border-color: #5E1914; font-weight: 600; letter-spacing: 1px;">
+                            Confirm Reservation
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </section>
+
+<style>
+    .reservation-form .form-control:focus {
+        border-color: #5E1914;
+        box-shadow: 0 0 0 0.2rem rgba(94, 25, 20, 0.25);
+    }
+    .btn-primary {
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        background: #3a0f0b !important;
+        border-color: #3a0f0b !important;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .alert {
+        border-radius: 0;
+        border: none;
+    }
+    @media (max-width: 767px) {
+        .makereservation {
+            padding: 2rem !important;
+        }
+    }
+</style>
+
+<script>
+    // Auto-dismiss alerts after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove();
+        });
+    }, 5000);
+
+    // Set minimum time to current time if date is today
+    document.querySelector('input[name="date"]').addEventListener('change', function() {
+        const today = new Date().toISOString().split('T')[0];
+        const timeInput = document.querySelector('input[name="time"]');
+
+        if (this.value === today) {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            timeInput.min = `${hours}:${minutes}`;
+        } else {
+            timeInput.removeAttribute('min');
+        }
+    });
+</script>
+
 {% endblock %}

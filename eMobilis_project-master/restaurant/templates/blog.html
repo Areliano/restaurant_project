@@ -1,45 +1,50 @@
 {% extends 'common.html' %}
-
 {% load static %}
 
 {% block body %}
 
     <section class="hero-wrap hero-wrap-2" style="background-image: url('{% static 'images/bg_4.jpg' %}');" data-stellar-background-ratio="0.5">
-      <div class="overlay"></div>
+      <div class="overlay" style="background: rgba(94, 25, 20, 0.7);"></div>
       <div class="container">
         <div class="row no-gutters slider-text align-items-center justify-content-center">
-          <div class="col-md-9 ftco-animate text-center" style="background: #ffc4c4">
-            <h1 class="mb-2 bread">Stories</h1>
-            <p class="breadcrumbs"><span class="mr-2"><a href="{% url 'index' %}">Home <i class="ion-ios-arrow-forward"></i></a></span> <span>Blog <i class="ion-ios-arrow-forward"></i></span></p>
+          <div class="col-md-9 ftco-animate text-center" style="background: rgba(193, 154, 107, 0.9); padding: 2rem; border-radius: 5px;">
+            <h1 class="mb-2 bread" style="color: #fff; font-weight: 600; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">Our Stories</h1>
+            <p class="breadcrumbs">
+                <span class="mr-2" style="color: #fff;"><a href="{% url 'index' %}" style="color: #fff;">Home <i class="ion-ios-arrow-forward"></i></a></span>
+                <span style="color: #fff;">Blog <i class="ion-ios-arrow-forward"></i></span>
+            </p>
           </div>
         </div>
       </div>
     </section>
 
-
-		<section class="ftco-section" style="background: #ffc4c4" >
-			<div class="container">
-				<div class="row">
-{% for stories in stories %}
-          <div class="col-md-4 ftco-animate">
-            <div class="blog-entry">
-              <a href="blog-single.html" class="block-20" style="background-image: url('{{ stories.image.url }}');">
-              </a>
-              <div class="text px-4 pt-3 pb-4">
-                <div class="meta">
-                  <div><a href="#">{{ stories.date }}</a></div>
-                  <div><a href="#">{{ stories.name }}</a></div>
+    <section class="ftco-section" style="background: #F8F8F8;">
+        <div class="container">
+            <div class="row justify-content-center mb-5 pb-2">
+                <div class="col-md-7 text-center heading-section ftco-animate">
+                    <span class="subheading" style="color: #C19A6B; letter-spacing: 1px;">Latest Updates</span>
+                    <h2 class="mb-4" style="color: #2C2C2C; font-weight: 700;">From Our Blog</h2>
                 </div>
-                <h3 class="heading"><a href="#">{{ stories.text1 }}</a></h3>
-              </div>
             </div>
-          </div>
-         {% endfor %}
-          </div>
+            <div class="row">
+                {% for stories in stories %}
+                <div class="col-md-4 ftco-animate">
+                    <div class="blog-entry" style="box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+                        <a href="blog-single.html" class="block-20" style="background-image: url('{{ stories.image.url }}'); height: 250px; position: relative;">
+                            <div class="overlay" style="background: rgba(0,0,0,0.2); position: absolute; top: 0; left: 0; right: 0; bottom: 0;"></div>
+                        </a>
+                        <div class="text px-4 pt-3 pb-4" style="background: #fff; border-top: 3px solid #C19A6B;">
+                            <div class="meta mb-2">
+                                <div style="color: #C19A6B;"><i class="icon-calendar mr-2"></i>{{ stories.date }}</div>
+                                <div style="color: #5E1914;"><i class="icon-person mr-2"></i>{{ stories.name }}</div>
+                            </div>
+                            <h3 class="heading" style="font-size: 1.3rem;"><a href="#" style="color: #2C2C2C;">{{ stories.text1 }}</a></h3>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-			</div>
-		</section>
+    </section>
 
 {% endblock %}
-
-

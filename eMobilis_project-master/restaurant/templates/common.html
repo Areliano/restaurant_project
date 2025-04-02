@@ -29,8 +29,16 @@
     <link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-    <!-- Additional styles for authentication messages -->
+    <!-- Theme consistent styles -->
     <style>
+        :root {
+            --primary-color: #5E1914;       /* Burgundy */
+            --secondary-color: #C19A6B;     /* Gold */
+            --light-bg: #F8F8F8;            /* Light background */
+            --dark-text: #2C2C2C;           /* Dark text */
+            --medium-text: #3A3A3A;          /* Medium text */
+        }
+
         .auth-messages {
             position: fixed;
             top: 80px;
@@ -41,29 +49,117 @@
         .auth-messages .alert {
             padding: 15px;
             margin-bottom: 10px;
-            border: 1px solid transparent;
-            border-radius: 4px;
+            border-left: 4px solid transparent;
+            border-radius: 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .auth-messages .alert-success {
             color: #155724;
             background-color: #d4edda;
-            border-color: #c3e6cb;
+            border-color: #28a745;
         }
         .auth-messages .alert-error {
             color: #721c24;
             background-color: #f8d7da;
-            border-color: #f5c6cb;
+            border-color: #dc3545;
         }
         .auth-messages .alert-info {
             color: #0c5460;
             background-color: #d1ecf1;
-            border-color: #bee5eb;
+            border-color: #17a2b8;
         }
         .user-greeting {
-            color: white;
+            color: var(--secondary-color);
             padding: 8px 15px;
             margin-right: 10px;
             display: inline-block;
+            font-weight: 500;
+        }
+
+        /* Navbar styling */
+        .navbar {
+            background: rgba(94, 25, 20, 0.95) !important;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            color: white !important;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .nav-link {
+            color: rgba(255,255,255,0.8) !important;
+            font-weight: 500;
+            padding: 8px 15px !important;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: var(--secondary-color) !important;
+        }
+        .nav-item.active .nav-link {
+            color: var(--secondary-color) !important;
+            font-weight: 600;
+        }
+
+        /* Footer styling */
+        .ftco-footer {
+            background: var(--primary-color) !important;
+            color: rgba(255,255,255,0.8);
+        }
+        .ftco-heading-2 {
+            color: white !important;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        .ftco-heading-2:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--secondary-color);
+        }
+        .ftco-footer-social a {
+            background: rgba(193, 154, 107, 0.2);
+            color: var(--secondary-color);
+        }
+        .ftco-footer-social a:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+        .open-hours span:first-child {
+            color: var(--secondary-color);
+            width: 120px;
+        }
+        .submit {
+            background: var(--secondary-color) !important;
+            color: white;
+            border: none !important;
+            transition: all 0.3s ease;
+        }
+        .submit:hover {
+            background: #a88359 !important;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-primary:hover {
+            background: #4a140f;
+            border-color: #4a140f;
+        }
+        .btn-secondary {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #a88359;
+            border-color: #a88359;
         }
     </style>
 </head>
@@ -129,8 +225,11 @@
 {% if messages %}
 <div class="auth-messages">
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
         {{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
     {% endfor %}
 </div>
@@ -138,12 +237,8 @@
 <script>
     // Auto-hide messages after 5 seconds
     setTimeout(function() {
-        var messages = document.querySelectorAll('.auth-messages .alert');
-        messages.forEach(function(message) {
-            message.style.opacity = '0';
-            setTimeout(function() {
-                message.style.display = 'none';
-            }, 500);
+        $('.alert').fadeTo(500, 0).slideUp(500, function(){
+            $(this).remove();
         });
     }, 5000);
 </script>

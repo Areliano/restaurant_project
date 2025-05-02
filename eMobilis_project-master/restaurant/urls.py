@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
 from . import views
-from .views import place_order, order, register_view, login_view, logout_view
+from .views import place_order, order, register_view, login_view, logout_view, reports
 
 urlpatterns = [
     path('', login_required(views.index), name='index'),  # Protected index view
@@ -19,4 +19,5 @@ urlpatterns = [
     path('register/', register_view, name='register'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
+    path('reports/', reports, name='reports'),
 ]

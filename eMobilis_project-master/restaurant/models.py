@@ -1,10 +1,7 @@
-from django.db import models
-
-from django.utils import timezone
-
-
-
 # Create your models here.
+from django.db import models
+from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
 
 class Homepage(models.Model):
     heading = models.CharField(max_length=500, default='heading')
@@ -27,8 +24,6 @@ class Homepage(models.Model):
 
     def __str__(self):
         return self.heading
-
-
 
 from django.db import models
 from django.core.validators import RegexValidator
@@ -145,6 +140,11 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
+from django.db import models
+from django.core.validators import RegexValidator, EmailValidator
+from django.core.exceptions import ValidationError
+from django.db.models import Sum, Count, Avg
+
 class Order(models.Model):
     menu_item = models.ForeignKey('Ourmenu', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
@@ -179,32 +179,23 @@ class Order(models.Model):
     def clean(self):
         """Validate stock availability and order details before saving."""
         if not self.pk:  # Only validate for new orders
-            # Stock validation
             if self.menu_item.stock < self.quantity:
                 raise ValidationError(
                     f"Cannot place order. Only {self.menu_item.stock} {self.menu_item.foodname} available."
                 )
-
-            # Quantity validation
             if self.quantity < 1:
                 raise ValidationError("Quantity must be at least 1")
-
-            # Email validation for new orders
             if not self.client_email or self.client_email == "no-email@example.com":
                 raise ValidationError("Please provide a valid email address")
 
     def save(self, *args, **kwargs):
-        """
-        Save order with validation and stock management.
-        """
+        """Save order with validation and stock management."""
         self.full_clean()  # Runs clean() and all field validations
 
-        is_new = not self.pk  # Check if this is a new order
-
-        super().save(*args, **kwargs)  # Save the order first
+        is_new = not self.pk
+        super().save(*args, **kwargs)
 
         if is_new:
-            # Deduct stock only for new orders
             self.menu_item.stock -= self.quantity
             self.menu_item.save()
 
@@ -218,6 +209,19 @@ class Order(models.Model):
     def total_price(self):
         """Calculate total price for the order."""
         return self.quantity * self.menu_item.price
+
+    @classmethod
+    def get_revenue_report(cls, start_date, end_date):
+        """Generate revenue report between two dates."""
+        return cls.objects.filter(
+            order_date__date__gte=start_date,
+            order_date__date__lte=end_date
+        ).aggregate(
+            total_orders=Count('id'),
+            total_revenue=Sum(models.F('menu_item__price') * models.F('quantity')),
+            average_order_value=Avg(models.F('menu_item__price') * models.F('quantity'))
+        )
+
 
 
 class Happy(models.Model):

@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="{% static 'css/flaticon.css' %}">
     <link rel="stylesheet" href="{% static 'css/icomoon.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <!-- Theme consistent styles -->
     <style>
@@ -198,6 +199,16 @@
                 <li class="nav-item {% if nav == 'booked' %} active {% endif %}">
                     <a href="{% url 'booked' %}" class="nav-link">Booked</a>
                 </li>
+
+
+                <!-- In your navigation section, add this conditionally -->
+{% if user.is_superuser %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'reports' %}">
+        <i class="fas fa-chart-bar"></i> Reports
+    </a>
+</li>
+{% endif %}
 
                 <!-- Authentication Links -->
                 {% if user.is_authenticated %}

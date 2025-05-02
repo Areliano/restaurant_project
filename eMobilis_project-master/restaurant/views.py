@@ -493,10 +493,16 @@ def is_admin(user):
     return user.is_superuser
 
 
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Sum, Count
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import datetime, timedelta
+from .models import Order, Reservation, Ourmenu
+
 @login_required
 @user_passes_test(is_admin)
 def reports(request):
-    # Date ranges with optional custom date filtering
     today = timezone.now().date()
 
     # Get filter parameters from request
@@ -510,87 +516,54 @@ def reports(request):
         start_date = today
         end_date = today
 
-    # Calculate previous periods for comparison
+    # Calculate previous periods
     period_days = (end_date - start_date).days + 1
     previous_start = start_date - timedelta(days=period_days)
     previous_end = start_date - timedelta(days=1)
 
-    # Fixed period calculations (daily, weekly, monthly)
+    # Fixed period boundaries
     last_7_days = today - timedelta(days=7)
     this_month_start = today.replace(day=1)
 
-    # Order reports for current period
-    current_orders = Order.objects.filter(
-        order_date__date__gte=start_date,
-        order_date__date__lte=end_date
-    )
-    previous_orders = Order.objects.filter(
-        order_date__date__gte=previous_start,
-        order_date__date__lte=previous_end
-    )
+    # Orders
+    current_orders = Order.objects.filter(order_date__date__gte=start_date, order_date__date__lte=end_date)
+    previous_orders = Order.objects.filter(order_date__date__gte=previous_start, order_date__date__lte=previous_end)
 
-    # Fixed period order counts
+    # Order counts
+    current_orders_count = current_orders.count()
+    previous_orders_count = previous_orders.count()
     daily_orders = Order.objects.filter(order_date__date=today).count()
     weekly_orders = Order.objects.filter(order_date__date__gte=last_7_days).count()
     monthly_orders = Order.objects.filter(order_date__date__gte=this_month_start).count()
 
-    # Revenue calculations
-    current_revenue = current_orders.aggregate(
-        total=Sum('menu_item__price')
-    )['total'] or 0
-    previous_revenue = previous_orders.aggregate(
-        total=Sum('menu_item__price')
-    )['total'] or 0
+    # Revenue
+    current_revenue = current_orders.aggregate(total=Sum('menu_item__price'))['total'] or 0
+    previous_revenue = previous_orders.aggregate(total=Sum('menu_item__price'))['total'] or 0
+    daily_revenue = Order.objects.filter(order_date__date=today).aggregate(total=Sum('menu_item__price'))['total'] or 0
+    weekly_revenue = Order.objects.filter(order_date__date__gte=last_7_days).aggregate(total=Sum('menu_item__price'))['total'] or 0
+    monthly_revenue = Order.objects.filter(order_date__date__gte=this_month_start).aggregate(total=Sum('menu_item__price'))['total'] or 0
 
-    # Fixed period revenues
-    daily_revenue = Order.objects.filter(
-        order_date__date=today
-    ).aggregate(total=Sum('menu_item__price'))['total'] or 0
+    # Percentage change for revenue and orders
+    revenue_change = ((current_revenue - previous_revenue) / previous_revenue) * 100 if previous_revenue else 0
+    orders_change = ((current_orders_count - previous_orders_count) / previous_orders_count) * 100 if previous_orders_count else 0
 
-    weekly_revenue = Order.objects.filter(
-        order_date__date__gte=last_7_days
-    ).aggregate(total=Sum('menu_item__price'))['total'] or 0
-
-    monthly_revenue = Order.objects.filter(
-        order_date__date__gte=this_month_start
-    ).aggregate(total=Sum('menu_item__price'))['total'] or 0
-
-    # Calculate percentage changes
-    revenue_change = 0
-    if previous_revenue != 0:
-        revenue_change = ((current_revenue - previous_revenue) / previous_revenue) * 100
-
-    # Reservation reports
-    current_reservations = Reservation.objects.filter(
-        date__gte=start_date,
-        date__lte=end_date
-    ).count()
-    previous_reservations = Reservation.objects.filter(
-        date__gte=previous_start,
-        date__lte=previous_end
-    ).count()
-
-    # Fixed period reservation counts
+    # Reservations
+    current_reservations_count = Reservation.objects.filter(date__gte=start_date, date__lte=end_date).count()
+    previous_reservations_count = Reservation.objects.filter(date__gte=previous_start, date__lte=previous_end).count()
     daily_reservations = Reservation.objects.filter(date=today).count()
     weekly_reservations = Reservation.objects.filter(date__gte=last_7_days).count()
     monthly_reservations = Reservation.objects.filter(date__gte=this_month_start).count()
 
-    # Calculate percentage change for reservations
-    reservation_change = 0
-    if previous_reservations != 0:
-        reservation_change = ((current_reservations - previous_reservations) / previous_reservations) * 100
+    reservation_change = ((current_reservations_count - previous_reservations_count) / previous_reservations_count) * 100 if previous_reservations_count else 0
 
-    # Inventory status
+    # Inventory
     low_stock_items = Ourmenu.objects.filter(stock__lte=5).order_by('stock')
     out_of_stock_items = Ourmenu.objects.filter(stock=0)
 
     # Popular items
-    popular_items = Ourmenu.objects.annotate(
-        order_count=Count('order')
-    ).order_by('-order_count')[:5]
+    popular_items = Ourmenu.objects.annotate(order_count=Count('order')).order_by('-order_count')[:5]
 
     context = {
-        # Fixed period data
         'daily_orders': daily_orders,
         'weekly_orders': weekly_orders,
         'monthly_orders': monthly_orders,
@@ -600,21 +573,19 @@ def reports(request):
         'daily_reservations': daily_reservations,
         'weekly_reservations': weekly_reservations,
         'monthly_reservations': monthly_reservations,
-
-        # Custom period data
-        'current_orders_count': current_orders.count(),
-        'current_reservations_count': current_reservations,
+        'current_orders_count': current_orders_count,
+        'current_reservations_count': current_reservations_count,
         'current_revenue': current_revenue,
         'revenue_change': revenue_change,
+        'orders_change': orders_change,
         'reservation_change': reservation_change,
+        'previous_orders_count': previous_orders_count,
+        'previous_reservations_count': previous_reservations_count,
+        'previous_revenue': previous_revenue,
         'period_days': period_days,
-
-        # Inventory data
         'low_stock_items': low_stock_items,
         'out_of_stock_items': out_of_stock_items,
         'popular_items': popular_items,
-
-        # Dates
         'today': today.strftime('%Y-%m-%d'),
         'start_date': start_date.strftime('%Y-%m-%d'),
         'end_date': end_date.strftime('%Y-%m-%d'),

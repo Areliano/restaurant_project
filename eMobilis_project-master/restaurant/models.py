@@ -37,7 +37,19 @@ class Table(models.Model):
     def __str__(self):
         return f"Table {self.number} - {self.seats} seats ({'Available' if self.available else 'Booked'})"
 
-class Reservation(models.Model):  # Changed from Customer to Reservation to avoid confusion
+
+from django.db import models
+from django.core.validators import RegexValidator
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.utils import timezone
+from datetime import datetime, time as datetime_time
+import logging
+
+logger = logging.getLogger(__name__)
+
+class Reservation(models.Model):
     name = models.CharField(
         max_length=100,
         validators=[RegexValidator(r'^[A-Za-z ]+$', message="Name can only contain letters and spaces.")]
@@ -50,7 +62,7 @@ class Reservation(models.Model):  # Changed from Customer to Reservation to avoi
     date = models.DateField()
     time = models.TimeField()
     person = models.PositiveIntegerField()
-    table = models.ForeignKey(Table, on_delete=models.SET_NULL, null=True, blank=True)
+    table = models.ForeignKey('Table', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -61,6 +73,90 @@ class Reservation(models.Model):  # Changed from Customer to Reservation to avoi
 
     def __str__(self):
         return f"{self.name} - {self.date} {self.time} (Table {self.table.number if self.table else 'None'})"
+
+    def send_confirmation_email(self):
+        """
+        Sends a confirmation email to the customer with reservation details
+        Returns True if successful, False otherwise
+        """
+        if not self.email or not self.table:
+            logger.error(f"Cannot send email for reservation {self.id} - missing email or table")
+            return False
+
+        try:
+            # Handle both string and date/time objects
+            if isinstance(self.date, str):
+                try:
+                    date_obj = datetime.strptime(self.date, '%Y-%m-%d').date()
+                except ValueError:
+                    date_obj = datetime.strptime(self.date, '%B %d, %Y').date()
+            else:
+                date_obj = self.date
+
+            if isinstance(self.time, str):
+                try:
+                    # Handle both 'HH:MM:SS' and 'HH:MM' formats
+                    if len(self.time.split(':')) == 2:
+                        time_obj = datetime.strptime(self.time, '%H:%M').time()
+                    else:
+                        time_obj = datetime.strptime(self.time, '%H:%M:%S').time()
+                except ValueError as e:
+                    logger.error(f"Time format error: {str(e)}")
+                    time_obj = datetime_time(12, 0)  # Default time if parsing fails
+            else:
+                time_obj = self.time
+
+            # Format date and time
+            formatted_date = date_obj.strftime('%B %d, %Y')
+            formatted_time = time_obj.strftime('%I:%M %p')
+
+            subject = f"Reservation Confirmation - Table {self.table.number}"
+            context = {
+                'reservation': {
+                    'name': self.name,
+                    'date': formatted_date,
+                    'time': formatted_time,
+                    'table': self.table,
+                    'person': self.person
+                },
+                'restaurant_name': getattr(settings, 'RESTAURANT_NAME', 'Our Restaurant'),
+                'contact_email': getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@example.com'),
+                'contact_phone': getattr(settings, 'RESTAURANT_PHONE', '+1234567890'),
+            }
+
+            # Load both HTML and plain text email templates
+            html_message = render_to_string('emails/reservation_confirmation.html', context)
+            plain_message = render_to_string('emails/reservation_confirmation.txt', context)
+
+            # Send the email
+            send_mail(
+                subject=subject,
+                message=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[self.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            logger.info(f"Successfully sent reservation confirmation to {self.email} for reservation {self.id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send reservation email for {self.id}: {str(e)}", exc_info=True)
+            return False
+
+    def save(self, *args, **kwargs):
+        """
+        Override save method to send email on new reservations
+        """
+        is_new = not self.pk
+        super().save(*args, **kwargs)
+
+        if is_new and self.email:
+            # Send confirmation email for new reservations
+            try:
+                self.send_confirmation_email()
+            except Exception as e:
+                logger.error(f"Error sending confirmation email for new reservation {self.id}: {str(e)}")
+
 
 class Restaurant(models.Model):
     name = models.CharField(max_length=50)

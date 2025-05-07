@@ -155,3 +155,7 @@ EMAIL_EXTRA_HEADERS = {
     'X-Entity-Ref-ID': 'BARAKARESCUE-RESTAURANT',  # For tracking in mail servers
     'X-Mailer': 'Django Restaurant System'
 }
+
+# Restaurant settings
+RESTAURANT_NAME = "Baraka Rescue Restaurant"
+RESTAURANT_PHONE = "+254 114 601620"

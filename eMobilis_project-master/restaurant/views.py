@@ -228,11 +228,15 @@ def reservation(request):
     })
 
 
-
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.utils import timezone
 from datetime import datetime, time as datetime_time
 from .models import Table, Reservation
 import logging
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def insertdata(request):
@@ -242,13 +246,13 @@ def insertdata(request):
             name = request.POST.get('name', '').strip()
             email = request.POST.get('email', '').strip().lower()
             phone = request.POST.get('phone', '').strip()
-            date = request.POST.get('date', '').strip()
-            time = request.POST.get('time', '').strip()
+            date_str = request.POST.get('date', '').strip()
+            time_str = request.POST.get('time', '').strip()
             person = request.POST.get('person', '0').strip()
             table_id = request.POST.get('table', '').strip()
 
             # Validate required fields
-            if not all([name, email, phone, date, time, person, table_id]):
+            if not all([name, email, phone, date_str, time_str, person, table_id]):
                 messages.error(request, "All fields are required!")
                 return redirect('reservation')
 
@@ -261,10 +265,14 @@ def insertdata(request):
                 messages.error(request, "Please enter a valid number of people")
                 return redirect('reservation')
 
-            # Validate date and time
+            # Validate and parse date and time
             try:
-                reservation_datetime = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
-                # Make the datetime timezone aware
+                # Parse date and time strings into datetime objects
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                time_obj = datetime.strptime(time_str, '%H:%M').time()
+
+                # Create timezone-aware datetime
+                reservation_datetime = datetime.combine(date_obj, time_obj)
                 reservation_datetime = timezone.make_aware(reservation_datetime)
 
                 if reservation_datetime < timezone.now():
@@ -298,13 +306,13 @@ def insertdata(request):
                 )
                 return redirect('reservation')
 
-            # Create reservation
+            # Create reservation with proper date/time objects
             reservation = Reservation.objects.create(
                 name=name,
                 email=email,
                 phone=phone,
-                date=date,
-                time=time,
+                date=date_obj,  # Use date object instead of string
+                time=time_obj,  # Use time object instead of string
                 person=person,
                 table=table
             )
@@ -313,12 +321,26 @@ def insertdata(request):
             table.available = False
             table.save()
 
-            # Success message with reservation details
-            messages.success(
-                request,
-                f"Reservation confirmed for {reservation_datetime.strftime('%A, %B %d at %I:%M %p')} "
-                f"(Table {table.number} for {person} people). Confirmation sent to {email}"
-            )
+            # Send confirmation email with improved error handling
+            try:
+                if reservation.send_confirmation_email():
+                    messages.success(
+                        request,
+                        f"Reservation confirmed for {reservation_datetime.strftime('%A, %B %d at %I:%M %p')} "
+                        f"(Table {table.number} for {person} people). Confirmation sent to {email}"
+                    )
+                else:
+                    messages.warning(
+                        request,
+                        "Reservation confirmed but email failed to send. Please contact us for confirmation."
+                    )
+            except Exception as e:
+                logger.error(f"Email sending error: {str(e)}", exc_info=True)
+                messages.warning(
+                    request,
+                    "Reservation confirmed but we encountered an error sending your confirmation. "
+                    "Please contact us to verify your booking."
+                )
 
             return redirect('booked')
 
@@ -332,30 +354,17 @@ def insertdata(request):
             return redirect('reservation')
 
     return redirect('reservation')
-def booked(request):
-    reservations = Reservation.objects.select_related('table').order_by('-created_at')
-    return render(request, "booked.html", {"reservations": reservations})
-
-
-def cancel_reservation(request, id):
-    reservation = get_object_or_404(Reservation, id=id)
-
-    if reservation.table:
-        table = reservation.table
-        table.available = True
-        table.save()
-
-    reservation.delete()
-    messages.success(request, "Reservation cancelled successfully")
-    return redirect('booked')
 
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from datetime import datetime, time as datetime_time
-from .models import Reservation, Table
+from .models import Table, Reservation
 import logging
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def edit_reservation(request, id):
@@ -371,13 +380,13 @@ def edit_reservation(request, id):
             name = request.POST.get('name', '').strip()
             email = request.POST.get('email', '').strip().lower()
             phone = request.POST.get('phone', '').strip()
-            date = request.POST.get('date', '').strip()
-            time = request.POST.get('time', '').strip()
+            date_str = request.POST.get('date', '').strip()
+            time_str = request.POST.get('time', '').strip()
             person = request.POST.get('person', '0').strip()
             new_table_id = request.POST.get('table', '').strip()
 
             # Validate required fields
-            if not all([name, email, phone, date, time, person, new_table_id]):
+            if not all([name, email, phone, date_str, time_str, person, new_table_id]):
                 messages.error(request, "All fields are required!")
                 return redirect('edit_reservation', id=id)
 
@@ -390,10 +399,14 @@ def edit_reservation(request, id):
                 messages.error(request, "Please enter a valid number of people")
                 return redirect('edit_reservation', id=id)
 
-            # Validate date and time
+            # Validate and parse date and time
             try:
-                reservation_datetime = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
-                # Make the datetime timezone aware
+                # Parse date and time strings into proper objects
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                time_obj = datetime.strptime(time_str, '%H:%M').time()
+
+                # Create timezone-aware datetime for validation
+                reservation_datetime = datetime.combine(date_obj, time_obj)
                 reservation_datetime = timezone.make_aware(reservation_datetime)
 
                 if reservation_datetime < timezone.now():
@@ -439,21 +452,37 @@ def edit_reservation(request, id):
                 new_table.available = False
                 new_table.save()
 
-            # Update reservation
+            # Update reservation with proper date/time objects
             reservation.name = name
             reservation.email = email
             reservation.phone = phone
-            reservation.date = date
-            reservation.time = time
+            reservation.date = date_obj  # Use date object instead of string
+            reservation.time = time_obj  # Use time object instead of string
             reservation.person = person
             reservation.table = new_table
             reservation.save()
 
-            messages.success(
-                request,
-                f"Reservation updated successfully for {reservation_datetime.strftime('%A, %B %d at %I:%M %p')} "
-                f"(Table {new_table.number} for {person} people)."
-            )
+            # Send update email with improved error handling
+            try:
+                if reservation.send_confirmation_email():
+                    messages.success(
+                        request,
+                        f"Reservation updated successfully for {reservation_datetime.strftime('%A, %B %d at %I:%M %p')} "
+                        f"(Table {new_table.number} for {person} people). Confirmation sent to {email}"
+                    )
+                else:
+                    messages.warning(
+                        request,
+                        "Reservation updated but email failed to send. Please contact us for confirmation."
+                    )
+            except Exception as e:
+                logger.error(f"Email sending error: {str(e)}", exc_info=True)
+                messages.warning(
+                    request,
+                    "Reservation updated but we encountered an error sending your confirmation. "
+                    "Please contact us to verify your booking."
+                )
+
             return redirect('booked')
 
         except Exception as e:
@@ -468,8 +497,25 @@ def edit_reservation(request, id):
     return render(request, "edit.html", {
         "reservation": reservation,
         "tables": available_tables,
-        "min_date": timezone.now().strftime('%Y-%m-%d')  # For date input min attribute
+        "min_date": timezone.now().strftime('%Y-%m-%d')
     })
+
+def booked(request):
+    reservations = Reservation.objects.select_related('table').order_by('-created_at')
+    return render(request, "booked.html", {"reservations": reservations})
+
+
+def cancel_reservation(request, id):
+    reservation = get_object_or_404(Reservation, id=id)
+
+    if reservation.table:
+        table = reservation.table
+        table.available = True
+        table.save()
+
+    reservation.delete()
+    messages.success(request, "Reservation cancelled successfully")
+    return redirect('booked')
 
 def dummy(request):
     chefs = Chefs.objects.all()
@@ -494,11 +540,12 @@ def is_admin(user):
 
 
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, F
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import Order, Reservation, Ourmenu
+
 
 @login_required
 @user_passes_test(is_admin)
@@ -536,16 +583,31 @@ def reports(request):
     weekly_orders = Order.objects.filter(order_date__date__gte=last_7_days).count()
     monthly_orders = Order.objects.filter(order_date__date__gte=this_month_start).count()
 
-    # Revenue
-    current_revenue = current_orders.aggregate(total=Sum('menu_item__price'))['total'] or 0
-    previous_revenue = previous_orders.aggregate(total=Sum('menu_item__price'))['total'] or 0
-    daily_revenue = Order.objects.filter(order_date__date=today).aggregate(total=Sum('menu_item__price'))['total'] or 0
-    weekly_revenue = Order.objects.filter(order_date__date__gte=last_7_days).aggregate(total=Sum('menu_item__price'))['total'] or 0
-    monthly_revenue = Order.objects.filter(order_date__date__gte=this_month_start).aggregate(total=Sum('menu_item__price'))['total'] or 0
+    # Revenue - CORRECTED to multiply price by quantity
+    current_revenue = current_orders.annotate(
+        order_total=F('menu_item__price') * F('quantity')
+    ).aggregate(total=Sum('order_total'))['total'] or 0
+
+    previous_revenue = previous_orders.annotate(
+        order_total=F('menu_item__price') * F('quantity')
+    ).aggregate(total=Sum('order_total'))['total'] or 0
+
+    daily_revenue = Order.objects.filter(order_date__date=today).annotate(
+        order_total=F('menu_item__price') * F('quantity')
+    ).aggregate(total=Sum('order_total'))['total'] or 0
+
+    weekly_revenue = Order.objects.filter(order_date__date__gte=last_7_days).annotate(
+        order_total=F('menu_item__price') * F('quantity')
+    ).aggregate(total=Sum('order_total'))['total'] or 0
+
+    monthly_revenue = Order.objects.filter(order_date__date__gte=this_month_start).annotate(
+        order_total=F('menu_item__price') * F('quantity')
+    ).aggregate(total=Sum('order_total'))['total'] or 0
 
     # Percentage change for revenue and orders
     revenue_change = ((current_revenue - previous_revenue) / previous_revenue) * 100 if previous_revenue else 0
-    orders_change = ((current_orders_count - previous_orders_count) / previous_orders_count) * 100 if previous_orders_count else 0
+    orders_change = ((
+                                 current_orders_count - previous_orders_count) / previous_orders_count) * 100 if previous_orders_count else 0
 
     # Reservations
     current_reservations_count = Reservation.objects.filter(date__gte=start_date, date__lte=end_date).count()
@@ -554,14 +616,17 @@ def reports(request):
     weekly_reservations = Reservation.objects.filter(date__gte=last_7_days).count()
     monthly_reservations = Reservation.objects.filter(date__gte=this_month_start).count()
 
-    reservation_change = ((current_reservations_count - previous_reservations_count) / previous_reservations_count) * 100 if previous_reservations_count else 0
+    reservation_change = ((
+                                      current_reservations_count - previous_reservations_count) / previous_reservations_count) * 100 if previous_reservations_count else 0
 
     # Inventory
     low_stock_items = Ourmenu.objects.filter(stock__lte=5).order_by('stock')
     out_of_stock_items = Ourmenu.objects.filter(stock=0)
 
-    # Popular items
-    popular_items = Ourmenu.objects.annotate(order_count=Count('order')).order_by('-order_count')[:5]
+    # Popular items - Updated to consider quantity in popularity
+    popular_items = Ourmenu.objects.annotate(
+        total_ordered=Sum('order__quantity')
+    ).order_by('-total_ordered')[:5]
 
     context = {
         'daily_orders': daily_orders,

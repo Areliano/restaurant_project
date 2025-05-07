@@ -1,0 +1,19 @@
+Reservation Confirmation
+
+Dear {{ reservation.name }},
+
+Thank you for choosing {{ restaurant_name }}. Your table reservation has been confirmed.
+
+Reservation Details:
+- Date: {{ reservation.date|date:"F j, Y" }}
+- Time: {{ reservation.time|time:"g:i A" }}
+- Table: Table {{ reservation.table.number }} ({{ reservation.table.seats }} seats)
+- Number of Guests: {{ reservation.person }}
+
+If you need to modify or cancel your reservation, please contact us at {{ contact_phone }} or reply to this email.
+
+We look forward to serving you!
+
+{{ restaurant_name }}
+{{ contact_email }}
+{{ contact_phone }}

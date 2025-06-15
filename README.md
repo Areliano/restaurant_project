@@ -132,4 +132,73 @@ In terminal (inside the project folder), run:
 ![img_10.png](img_10.png)    THIS IS WHAT WILL BE DISPLAYED WHEN YOU WANT TO ADD AN ITEM TO THE MENU.  YOU CAN ALSO DELETE AN ITEM USING THE DELETE BUTTON
 
 
-### 
+### Still on the Specialties page, a customer can place an order by clicking on the order now button of the item they want to order and the following form will be displayed:
+
+![img_11.png](img_11.png)
+
+### after placing the order, an email will be sent to the email on the order containing the details of the order: 
+
+![img_12.png](img_12.png)
+![img_13.png](img_13.png)
+
+## The orders page is where all the orders are displayed.
+
+##This is the reservations page where one can reserve a table
+
+![img_14.png](img_14.png)
+
+![img_15.png](img_15.png)
+
+# It is a real-time table reservation system
+
+
+## RESERVATION ON THE ADMIN SIDE
+
+# On the admin side, one can edit the number of tables available for reservation by doing the following
+
+1. Go to the admin side, on the section written Tables 
+2. ![img_16.png](img_16.png)
+3. You can add or edit a table. You can also delete a table.
+4. ![img_17.png](img_17.png)   
+5. Make sure to save the edited changes.
+6. ![img_18.png](img_18.png)
+7. You can also go to the Reservations section on the admin side and see the number of people who have reserved tables or even edit them or delete them.
+8. The Booked page on the Customer side displays the number of people who have made table reservations at the Restaurant as shown by the screenshots below:
+9. ![img_19.png](img_19.png)
+10. ![img_20.png](img_20.png)
+11. Upon making a Reservation, an email is sent to the person who reserved the table together with the details of the resevation.
+
+
+## REPORT SECTION
+1. The reports are only available on the frontend side, and can only be accessed by an account that has super user priviledges/ an admin account. Normal customers won't be abe to see these reports
+2. ![img_23.png](img_23.png)
+3. ![img_22.png](img_22.png)
+4. ![img_24.png](img_24.png)
+
+5. To let a normal account access the reports, or to upgrage a customer account to have admin priviledges, let the customer register first,then go to the admin side on the section written Users and click on it, The number of people who have registered on the website will be displayed.
+
+6. ![img_25.png](img_25.png)
+
+7. Select the user whose status you want to upgrade.
+
+8. ![img_26.png](img_26.png)
+
+9. On the Permissions section, tick Staff Status and Super User status.
+
+
+# Other screenshots
+1. ![img_27.png](img_27.png)     THIS IS THE REGISTRATION PAGE
+
+2. ![img_28.png](img_28.png)  ![img_29.png](img_29.png)   THE BLOG PAGE
+
+3. ![img_30.png](img_30.png)  ![img_31.png](img_31.png)   THE CONTACT PAGE
+
+4. ![img_32.png](img_32.png) THIS IS HOW THE FOOTER LOOKS LIKE, YOU CAN EDIT IT'S CONTENTS ON THE ADMIN SIDE ON THE SECTION "FOOTERS"   ![img_33.png](img_33.png)
+
+5. NB: THIS PROJECT IS FULLY DYNAMIC WHICH MEANS THAT YOU CAN EDIT OR CHANGE MOST OF THE THINGS ON THE WEBSITE FROM THE ADMIN SIDE WITHOUT HAVING TO GO BACK TO THE CODE, HENCE IT IS USER FRIENDLY.
+
+
+
+
+
+
